@@ -380,7 +380,7 @@ Readonly::Hash my %FETCH_SIZES => (
   'Site MP4' => '_site',
 );
 
-Readonly::Scalar my $FLICKR_URL  => "http://www.flickr.com/";
+Readonly::Scalar my $FLICKR_URL        => "https://www.flickr.com/";
 Readonly::Scalar my $FLICKR_URL_PHOTOS => $FLICKR_URL . "photos/";
 
 =head1 PACKAGE METHODS
