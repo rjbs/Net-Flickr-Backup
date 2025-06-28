@@ -653,9 +653,7 @@ sub backup_photo {
     my $sz = ($sizes->findnodes("/rsp/sizes/size[\@label='$label']"))[0];
 
     if (! $sz) {
-      $self->log()->warning("Unable to locate size info for key $label\n");
-      use Data::Printer;
-      p $sizes;
+      $self->log()->warning("Unable to locate size info for key $label");
       next;
     }
 
@@ -692,14 +690,14 @@ sub backup_photo {
     if ((-s $img_bak) && (! $force)){
 
       if (! $has_changed){
-        $self->log()->info("$img_bak has not changed, skipping\n");
+        $self->log()->info("$img_bak has not changed, skipping");
         next;
       }
 
       my $mtime = (stat($img_bak))[9];
 
       if ((-f $img_bak) && ($last_update) && ($mtime >= $last_update)){
-        $self->log()->info("$img_bak has not changed ($mtime/$last_update), skipping\n");
+        $self->log()->info("$img_bak has not changed ($mtime/$last_update), skipping");
         $has_changed = 0;
         next;
       }
@@ -716,7 +714,7 @@ sub backup_photo {
     }
 
     if (! getstore($source, $img_bak)) {
-      $self->log()->error("failed to store '$source' as '$img_bak', $!\n");
+      $self->log()->error("failed to store '$source' as '$img_bak', $!");
       next;
     }
 
@@ -851,7 +849,7 @@ sub store_rdf {
                fh       => \*$fh});
 
   if (! $desc_ok) {
-    $self->log()->error("failed to describe photo $id:$secret\n");
+    $self->log()->error("failed to describe photo $id:$secret");
 
     if (! $rdf_inline){
       $fh->delete();
