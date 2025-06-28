@@ -708,12 +708,15 @@ sub backup_photo {
       my $req = HTTP::Request->new('HEAD' => $source);
       my $res = $ua->request($req);
       my $headers = $res->headers();
-      my $disp = $headers->{"content-disposition"};
 
-      $disp =~ /\.([^\.]+)$/;
-      $ext = $1;
+      my $type = $headers->content_type;
+      $type =~ m{^video/([-a-z0-9]+)};
 
-      $self->log()->info("video! $source has $disp becomes $ext");
+      $ext = $1 eq 'mp4' ? 'mp4'
+           : $1          ? "video-$1"
+           :               "video-unknown";
+
+      $self->log()->info("video! $source has Content-Type $type becomes $ext");
     }
 
     my $img_root  = File::Spec->catdir($photos_root, $yyyy, $mm, $dd);
