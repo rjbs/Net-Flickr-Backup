@@ -596,6 +596,7 @@ sub backup_photo {
   }
 
   my $dates = ($img->findnodes("dates"))[0];
+  my $media = $img->getAttribute("media");
 
   my $last_update = $dates->getAttribute("lastupdate");
   my $has_changed = 1;
@@ -625,7 +626,14 @@ sub backup_photo {
 
   my $files_modified = 0;
 
-  foreach my $label (keys %FETCH_SIZES) {
+  FETCH: foreach my $label (keys %FETCH_SIZES) {
+    if (
+      ($media ne 'video')
+      &&
+      ($label eq 'Video Original' || $label eq 'Site MP4')
+    ) {
+      next FETCH;
+    }
 
     my $fetch_label = lc($label);
     $fetch_label =~ s/ /_/g;
