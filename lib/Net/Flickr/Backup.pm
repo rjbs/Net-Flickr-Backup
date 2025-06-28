@@ -460,7 +460,7 @@ sub backup {
   if (my $min_date = $self->{cfg}->param("search.modified_since")) {
 
     if ($min_date !~ /^\d+$/) {
-      $min_date = &_mk_mindate($min_date);
+      $min_date = _mk_mindate($min_date);
 
       if (! $min_date) {
         $self->log()->error("unable to parse min date criteria, exiting");
@@ -518,7 +518,7 @@ sub backup {
       $self->log()->info(
         sprintf "process image %s (%s)",
         $id,
-        &_clean($node->getAttribute("title"))
+        _clean($node->getAttribute("title"))
       );
 
       if ($self->_has_callback("start_backup_photo")) {
@@ -619,7 +619,7 @@ sub backup_photo {
     lastmod  => $last_update
   );
 
-  my $title = &_clean($data{title}) || "untitled";
+  my $title = _clean($data{title}) || "untitled";
 
   my $dt = $data{taken};
 
@@ -1252,7 +1252,7 @@ sub make_photo_triples {
 
     push @$triples, [$uri, $self->uri_shortform("rdfs", "seeAlso"), $photo];
     push @$triples, [$uri, $self->uri_shortform("dc", "creator"), $creator_uri];
-    push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), &_w3cdtf()];
+    push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), _w3cdtf()];
   }
 
   push @$triples, [$creator_uri, $self->uri_shortform("foaf", "name"), (getpwuid($EUID))[6]];
@@ -1348,7 +1348,7 @@ sub path_rdf_dumpfile {
   my $id     = $photo->find("/rsp/photo/\@id")->string_value();
   my $secret = $photo->find("/rsp/photo/\@secret")->string_value();
   my $title  = $photo->find("/rsp/photo/title")->string_value() || "untitled";
-  $title     = &_clean($title);
+  $title     = _clean($title);
 
   my $dt = $photo->find("/rsp/photo/dates/\@taken")->string_value();
 
@@ -1523,7 +1523,7 @@ sub _jpeg_handler {
 
 sub _iptcify {
   my $self = shift;
-  return encode("iso-8859-1", &_decode($_[0]));
+  return encode("iso-8859-1", _decode($_[0]));
 }
 
 =head1 EXAMPLES
