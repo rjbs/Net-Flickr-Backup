@@ -371,7 +371,7 @@ use HTTP::Request;
 use Memoize;
 use Sys::Hostname;
 
-Readonly::Hash my %FETCH_SIZES => (
+my %FETCH_SIZES = (
   'Original' => '',
   'Medium'   => '_m',
   'Medium 640'   => '_z',
@@ -380,8 +380,8 @@ Readonly::Hash my %FETCH_SIZES => (
   'Site MP4' => '_site',
 );
 
-Readonly::Scalar my $FLICKR_URL        => "https://www.flickr.com/";
-Readonly::Scalar my $FLICKR_URL_PHOTOS => $FLICKR_URL . "photos/";
+my $FLICKR_URL        = "https://www.flickr.com/";
+my $FLICKR_URL_PHOTOS = $FLICKR_URL . "photos/";
 
 =head1 PACKAGE METHODS
 
@@ -695,6 +695,8 @@ sub backup_photo {
 
     if (! $sz) {
       $self->log()->warning("Unable to locate size info for key $label\n");
+      use Data::Printer;
+      p $sizes;
       next;
     }
 
