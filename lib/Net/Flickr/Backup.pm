@@ -469,7 +469,7 @@ sub backup {
     }
 
     $poll_meth = "flickr.photos.recentlyUpdated";
-    $poll_args = {min_date => $min_date};
+    $poll_args = { min_date => $min_date };
 
     $self->{__lastmod_since} = $min_date;
   }
@@ -489,8 +489,10 @@ sub backup {
 
     $poll_args->{page} = $current_page;
 
-    my $photos = $self->api_call({"method" => $poll_meth,
-                args     => $poll_args});
+    my $photos = $self->api_call({
+      "method" => $poll_meth,
+      args     => $poll_args,
+    });
 
     if (! $photos) {
       return 0;
@@ -513,8 +515,11 @@ sub backup {
       my $id      = $node->getAttribute("id");
       my $secret  = $node->getAttribute("secret");
 
-      $self->log()->info(sprintf("process image %s (%s)",
-               $id, &_clean($node->getAttribute("title"))));
+      $self->log()->info(
+        sprintf "process image %s (%s)",
+        $id,
+        &_clean($node->getAttribute("title"))
+      );
 
       if ($self->_has_callback("start_backup_photo")) {
         $self->_execute_callback("start_backup_photo", $node);
@@ -579,9 +584,13 @@ sub backup_photo {
     return 0;
   }
 
-  my $info = $self->api_call({method =>"flickr.photos.getInfo",
-            args => {photo_id => $id,
-               secret => $secret}});
+  my $info = $self->api_call({
+    method  =>"flickr.photos.getInfo",
+    args    => {
+      photo_id  => $id,
+      secret    => $secret,
+    },
+  });
 
   if (! $info) {
     return 0;
@@ -601,12 +610,14 @@ sub backup_photo {
   my $last_update = $dates->getAttribute("lastupdate");
   my $has_changed = 1;
 
-  my %data = (photo_id => $id,
-        user_id  => $img->find("owner/\@nsid")->string_value(),
-        title    => $img->find("title")->string_value(),
-        taken    => $dates->getAttribute("taken"),
-        posted   => $dates->getAttribute("posted"),
-        lastmod  => $last_update);
+  my %data = (
+    photo_id => $id,
+    user_id  => $img->find("owner/\@nsid")->string_value(),
+    title    => $img->find("title")->string_value(),
+    taken    => $dates->getAttribute("taken"),
+    posted   => $dates->getAttribute("posted"),
+    lastmod  => $last_update
+  );
 
   my $title = &_clean($data{title}) || "untitled";
 
@@ -615,8 +626,10 @@ sub backup_photo {
   $dt =~ /^(\d{4})-(\d{2})-(\d{2})/;
   my ($yyyy,$mm,$dd) = ($1,$2,$3);
 
-  my $sizes = $self->api_call({method => "flickr.photos.getSizes",
-             args   => {photo_id => $id}});
+  my $sizes = $self->api_call({
+    method => "flickr.photos.getSizes",
+    args   => { photo_id => $id },
+  });
 
   if (! $sizes) {
     return 0;
@@ -844,9 +857,11 @@ sub store_rdf {
     return 0;
   }
 
-  my $desc_ok = $self->describe_photo({photo_id => $id,
-               secret   => $secret,
-               fh       => \*$fh});
+  my $desc_ok = $self->describe_photo({
+    photo_id => $id,
+    secret   => $secret,
+    fh       => \*$fh,
+  });
 
   if (! $desc_ok) {
     $self->log()->error("failed to describe photo $id:$secret");
@@ -899,9 +914,11 @@ sub store_iptc_inline {
     return 0;
   }
 
-  my %iptc = ('Headline'   => $self->_iptcify($photo->find("/rsp/photo/title")->string_value()),
-        'Caption/Abstract' => $self->_iptcify($photo->find("/rsp/photo/description")->string_value()),
-        'Keywords'   => []);
+  my %iptc = (
+    'Headline' => $self->_iptcify($photo->find("/rsp/photo/title")->string_value()),
+    'Caption/Abstract' => $self->_iptcify($photo->find("/rsp/photo/description")->string_value()),
+    'Keywords' => [],
+  );
 
   my @tags = ();
 
