@@ -403,10 +403,7 @@ sub init {
     return undef;
   }
 
-  #
-  # Ensure that we have 'flickr' and 'backup'
-  # config blocks
-  #
+  # Ensure that we have 'flickr' and 'backup' config blocks
 
   foreach my $block ('flickr', 'backup') {
 
@@ -418,15 +415,11 @@ sub init {
     }
   }
 
-  #
-
   $self->{'__lastmod_since'} = 0;
   $self->{'__callbacks'}     = {};
   $self->{'__cancel'}  = 0;
 
   $self->{'__hostname'} = undef;
-
-  #
 
   memoize("_clean");
   return 1;
@@ -452,20 +445,12 @@ sub backup {
     return 0;
   }
 
-  #
-  #
-  #
-
   my $photos_root = $self->{cfg}->param("backup.photos_root");
 
   if (! $photos_root) {
     $self->log()->error("no photo root defined, exiting");
     return 0;
   }
-
-  #
-  #
-  #
 
   my $poll_meth = "flickr.photos.search";
   my $poll_args = $self->{cfg}->param(-block=>"search");
@@ -489,15 +474,7 @@ sub backup {
     $self->{'__lastmod_since'} = $min_date;
   }
 
-  #
-  #
-  #
-
   $self->log()->info("search args ($poll_meth) : " . Dumper($poll_args));
-
-  #
-  #
-  #
 
   my $num_pages    = 0;
   my $current_page = 1;
@@ -512,8 +489,6 @@ sub backup {
 
     $poll_args->{page} = $current_page;
 
-    #
-
     my $photos = $self->api_call({"method" => $poll_meth,
                 args     => $poll_args});
 
@@ -521,15 +496,11 @@ sub backup {
       return 0;
     }
 
-    #
-
     if (($current_page == 1) && ($self->_has_callback("start_backup_queue"))) {
       $self->_execute_callback("start_backup_queue", $photos);
     }
 
     $num_pages = $photos->find("/rsp/photos/\@pages")->string_value();
-
-    #
 
     foreach my $node ($photos->findnodes("/rsp/photos/photo")) {
 
@@ -544,8 +515,6 @@ sub backup {
 
       $self->log()->info(sprintf("process image %s (%s)",
                $id, &_clean($node->getAttribute("title"))));
-
-      #
 
       if ($self->_has_callback("start_backup_photo")) {
         $self->_execute_callback("start_backup_photo", $node);
@@ -566,13 +535,9 @@ sub backup {
     $current_page ++;
   }
 
-  #
-
   if ($self->_has_callback("finish_backup_queue")) {
     $self->_execute_callback("finish_backup_queue");
   }
-
-  #
 
   if ((! $self->{'__cancel'}) && ($self->{cfg}->param("backup.scrub_backups"))) {
     $self->log()->info("scrubbing backups");
@@ -606,8 +571,6 @@ sub backup_photo {
     return 0;
   }
 
-  #
-
   my $force       = $self->{cfg}->param("backup.force");
   my $photos_root = $self->{cfg}->param("backup.photos_root");
 
@@ -615,8 +578,6 @@ sub backup_photo {
     $self->log()->error("no photo root defined, exiting");
     return 0;
   }
-
-  #
 
   my $info = $self->api_call({method =>"flickr.photos.getInfo",
             args => {'photo_id' => $id,
@@ -639,16 +600,12 @@ sub backup_photo {
   my $last_update = $dates->getAttribute("lastupdate");
   my $has_changed = 1;
 
-  #
-
   my %data = (photo_id => $id,
         user_id  => $img->find("owner/\@nsid")->string_value(),
         title    => $img->find("title")->string_value(),
         taken    => $dates->getAttribute("taken"),
         posted   => $dates->getAttribute("posted"),
         lastmod  => $last_update);
-
-  #
 
   my $title = &_clean($data{title}) || "untitled";
 
@@ -657,16 +614,12 @@ sub backup_photo {
   $dt =~ /^(\d{4})-(\d{2})-(\d{2})/;
   my ($yyyy,$mm,$dd) = ($1,$2,$3);
 
-  #
-
   my $sizes = $self->api_call({method => "flickr.photos.getSizes",
              args   => {photo_id => $id}});
 
   if (! $sizes) {
     return 0;
   }
-
-  #
 
   my $fetch_cfg = $self->{cfg}->param(-block=>"backup");
 
@@ -688,8 +641,6 @@ sub backup_photo {
       $self->log()->debug("$fetch_param option is false, skipping");
       next;
     }
-
-    #
 
     my $sz = ($sizes->findnodes("/rsp/sizes/size[\@label='$label']"))[0];
 
@@ -730,8 +681,6 @@ sub backup_photo {
     my $img_bak = File::Spec->catfile($img_root, $img_fname);
     $self->{'__files'}->{$label} = $img_bak;
 
-    #
-
     if ((-s $img_bak) && (! $force)){
 
       if (! $has_changed){
@@ -747,8 +696,6 @@ sub backup_photo {
         next;
       }
     }
-
-    #
 
     if (! -d $img_root) {
 
@@ -767,21 +714,15 @@ sub backup_photo {
 
     $self->log()->info("stored $img_bak");
 
-    #
-
     $files_modified ++;
   }
 
-  #
   # Ensure that we don't accidentally purge any metafiles
-  #
 
   my $meta_bak = $self->path_rdf_dumpfile($info);
   push @{$self->{'_scrub'}->{$id}}, basename($meta_bak);
 
-  #
   # Do we need to keep going...
-  #
 
   $has_changed = ($files_modified) ? 1 : 0;
 
@@ -797,9 +738,7 @@ sub backup_photo {
       $self->log()->info("has changed (update) : $has_changed ($last_update - $lastmod)");
     }
 
-    #
     # Ensure the RDF file is there and up to date
-    #
 
     if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
 
@@ -829,18 +768,12 @@ sub backup_photo {
 
   $self->log()->info("has changed (final) : $has_changed");
 
-  #
   # Is that RDF in your pants?
-  #
-
   if ($self->{cfg}->param("rdf.do_dump")) {
     $self->store_rdf($info, $has_changed, $force);
   }
 
-  #
   # JPEG/IPTC
-  #
-
   if ($self->{cfg}->param("iptc.do_dump")) {
     $self->store_iptc($info, $has_changed, $force);
   }
@@ -876,10 +809,6 @@ sub store_rdf {
     return 1;
   }
 
-  #
-  #
-  #
-
   my $meta_root = dirname($meta_bak);
 
   if ((! -d $meta_root) && (! $rdf_inline)) {
@@ -891,10 +820,6 @@ sub store_rdf {
       next;
     }
   }
-
-  #
-  #
-  #
 
   $self->log()->info("fetching RDF data for photo");
 
@@ -913,10 +838,6 @@ sub store_rdf {
     return 0;
   }
 
-  #
-  #
-  #
-
   my $desc_ok = $self->describe_photo({photo_id => $id,
                secret   => $secret,
                fh       => \*$fh});
@@ -931,10 +852,7 @@ sub store_rdf {
     return 0;
   }
 
-  #
   # JPEG/RDF COM
-  #
-
   if ($rdf_inline) {
     if (! $self->store_rdf_inline(\$rdf_str, $self->{'__files'}->{'Original'})) {
       return 0;
@@ -1038,36 +956,32 @@ sub scrub {
     return 1;
   }
 
-  #
-
   my $rule = File::Find::Rule->new();
   $rule->file();
 
   $rule->exec(sub {
-          my ($shortname, $path, $fullname) = @_;
+    my ($shortname, $path, $fullname) = @_;
 
-          # $self->log()->info("test $shortname");
+    # $self->log()->info("test $shortname");
 
-          $shortname =~ /^\d{8}-(\d+)-/;
-          my $id = $1;
+    $shortname =~ /^\d{8}-(\d+)-/;
+    my $id = $1;
 
-          if (! $id) {
-            return 0;
-          }
+    if (! $id) {
+      return 0;
+    }
 
-          if (! exists($self->{'_scrub'}->{$id})) {
-            return 0;
-          }
+    if (! exists($self->{'_scrub'}->{$id})) {
+      return 0;
+    }
 
-          if (grep /$shortname/, @{$self->{'_scrub'}->{$id}}) {
-            return 0;
-          }
+    if (grep /$shortname/, @{$self->{'_scrub'}->{$id}}) {
+      return 0;
+    }
 
-          $self->log()->info("mark $fullname for scrubbing");
-          return 1;
-        });
-
-  #
+    $self->log()->info("mark $fullname for scrubbing");
+    return 1;
+  });
 
   foreach my $root ($rule->in($self->{'cfg'}->param("backup.photos_root"))) {
 
@@ -1100,8 +1014,6 @@ sub scrub {
       }
     }
   }
-
-  #
 
   $self->{'_scrub'} = {};
   return 1;
@@ -1543,8 +1455,6 @@ sub _mk_mindate {
   if ((! $count) || (! $period)) {
     return 0;
   }
-
-  #
 
   if ($period eq "h") {
     return time() - ($count * (60 * 60));
