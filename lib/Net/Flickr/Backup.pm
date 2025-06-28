@@ -415,11 +415,11 @@ sub init {
     }
   }
 
-  $self->{'__lastmod_since'} = 0;
-  $self->{'__callbacks'}     = {};
-  $self->{'__cancel'}  = 0;
+  $self->{__lastmod_since} = 0;
+  $self->{__callbacks}     = {};
+  $self->{__cancel}  = 0;
 
-  $self->{'__hostname'} = undef;
+  $self->{__hostname} = undef;
 
   memoize("_clean");
   return 1;
@@ -455,7 +455,7 @@ sub backup {
   my $poll_meth = "flickr.photos.search";
   my $poll_args = $self->{cfg}->param(-block=>"search");
 
-  $poll_args->{'user_id'} = $auth->find("/rsp/auth/user/\@nsid")->string_value();
+  $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value();
 
   if (my $min_date = $self->{cfg}->param("search.modified_since")) {
 
@@ -471,7 +471,7 @@ sub backup {
     $poll_meth = "flickr.photos.recentlyUpdated";
     $poll_args = {min_date => $min_date};
 
-    $self->{'__lastmod_since'} = $min_date;
+    $self->{__lastmod_since} = $min_date;
   }
 
   $self->log()->info("search args ($poll_meth) : " . Dumper($poll_args));
@@ -483,7 +483,7 @@ sub backup {
 
   while ($poll) {
 
-    if ($self->{'__cancel'}) {
+    if ($self->{__cancel}) {
       last;
     }
 
@@ -504,11 +504,11 @@ sub backup {
 
     foreach my $node ($photos->findnodes("/rsp/photos/photo")) {
 
-      if ($self->{'__cancel'}) {
+      if ($self->{__cancel}) {
         last;
       }
 
-      $self->{'__files'} = {};
+      $self->{__files} = {};
 
       my $id      = $node->getAttribute("id");
       my $secret  = $node->getAttribute("secret");
@@ -539,7 +539,7 @@ sub backup {
     $self->_execute_callback("finish_backup_queue");
   }
 
-  if ((! $self->{'__cancel'}) && ($self->{cfg}->param("backup.scrub_backups"))) {
+  if ((! $self->{__cancel}) && ($self->{cfg}->param("backup.scrub_backups"))) {
     $self->log()->info("scrubbing backups");
     $self->scrub();
   }
@@ -580,14 +580,14 @@ sub backup_photo {
   }
 
   my $info = $self->api_call({method =>"flickr.photos.getInfo",
-            args => {'photo_id' => $id,
-               'secret' => $secret}});
+            args => {photo_id => $id,
+               secret => $secret}});
 
   if (! $info) {
     return 0;
   }
 
-  $self->{'_scrub'}->{$id} = [];
+  $self->{_scrub}->{$id} = [];
 
   my $img = ($info->findnodes("/rsp/photo"))[0];
 
@@ -682,10 +682,10 @@ sub backup_photo {
     my $img_fname = sprintf("%04d%02d%02d-%s-%s%s.%s", $yyyy, $mm, $dd, $id, $title, $FETCH_SIZES{$label}, $ext);
 
     $self->log()->info("scrub-store $img_fname");
-    push @{$self->{'_scrub'}->{$id}}, $img_fname;
+    push @{$self->{_scrub}->{$id}}, $img_fname;
 
     my $img_bak = File::Spec->catfile($img_root, $img_fname);
-    $self->{'__files'}->{$label} = $img_bak;
+    $self->{__files}->{$label} = $img_bak;
 
     if ((-s $img_bak) && (! $force)){
 
@@ -726,7 +726,7 @@ sub backup_photo {
   # Ensure that we don't accidentally purge any metafiles
 
   my $meta_bak = $self->path_rdf_dumpfile($info);
-  push @{$self->{'_scrub'}->{$id}}, basename($meta_bak);
+  push @{$self->{_scrub}->{$id}}, basename($meta_bak);
 
   # Do we need to keep going...
 
@@ -736,7 +736,7 @@ sub backup_photo {
 
   if ((! $has_changed) && (! $force)) {
 
-    my $lastmod = $self->{'__lastmod_since'};
+    my $lastmod = $self->{__lastmod_since};
     $self->log()->info("last mod : $lastmod");
 
     if (($lastmod) && ($last_update >= $lastmod)) {
@@ -794,7 +794,7 @@ sub store_rdf {
   my $force       = shift;
 
   if (! $force){
-    $force = $self->{'cfg'}->param("rdf.force");
+    $force = $self->{cfg}->param("rdf.force");
   }
 
   my $rdf_root   = $self->{cfg}->param("rdf.rdfdump_root");
@@ -860,7 +860,7 @@ sub store_rdf {
 
   # JPEG/RDF COM
   if ($rdf_inline) {
-    if (! $self->store_rdf_inline(\$rdf_str, $self->{'__files'}->{'Original'})) {
+    if (! $self->store_rdf_inline(\$rdf_str, $self->{__files}->{Original})) {
       return 0;
     }
   }
@@ -885,7 +885,7 @@ sub store_iptc {
     return 1;
   }
 
-  return $self->store_iptc_inline($photo, $self->{'__files'}->{'Original'});
+  return $self->store_iptc_inline($photo, $self->{__files}->{Original});
 }
 
 sub store_iptc_inline {
@@ -912,7 +912,7 @@ sub store_iptc_inline {
       $raw = "\"$raw\"";
     }
 
-    push @{$iptc{'Keywords'}}, $raw;
+    push @{$iptc{Keywords}}, $raw;
   }
 
   if (! $im->set_app13_data(\%iptc, 'UPDATE', 'IPTC')) {
@@ -958,7 +958,7 @@ Returns true or false.
 sub scrub {
   my $self = shift;
 
-  if (! keys %{$self->{'_scrub'}}) {
+  if (! keys %{$self->{_scrub}}) {
     return 1;
   }
 
@@ -977,11 +977,11 @@ sub scrub {
       return 0;
     }
 
-    if (! exists($self->{'_scrub'}->{$id})) {
+    if (! exists($self->{_scrub}->{$id})) {
       return 0;
     }
 
-    if (grep /$shortname/, @{$self->{'_scrub'}->{$id}}) {
+    if (grep /$shortname/, @{$self->{_scrub}->{$id}}) {
       return 0;
     }
 
@@ -989,7 +989,7 @@ sub scrub {
     return 1;
   });
 
-  foreach my $root ($rule->in($self->{'cfg'}->param("backup.photos_root"))) {
+  foreach my $root ($rule->in($self->{cfg}->param("backup.photos_root"))) {
 
     $self->log()->info("unlink $root");
 
@@ -1021,7 +1021,7 @@ sub scrub {
     }
   }
 
-  $self->{'_scrub'} = {};
+  $self->{_scrub} = {};
   return 1;
 }
 
@@ -1034,7 +1034,7 @@ is complete.
 
 sub cancel_backup {
   my $self = shift;
-  $self->{'__cancel'} = 1;
+  $self->{__cancel} = 1;
 }
 
 =head2 $obj->register_callback($name, \&func)
@@ -1091,7 +1091,7 @@ sub register_callback {
     return 0;
   }
 
-  $self->{'__callbacks'}->{$name} = $func;
+  $self->{__callbacks}->{$name} = $func;
   return 1;
 }
 
@@ -1228,9 +1228,9 @@ sub make_photo_triples {
 
   push @$triples, [$user_uri, $self->uri_shortform("rdfs", "subClassOf"), "http://xmlns.com/foaf/0.1/Person"];
 
-  foreach my $label (keys %{$self->{'__files'}}) {
+  foreach my $label (keys %{$self->{__files}}) {
 
-    my $uri   = "file://".$self->{'__files'}->{$label};
+    my $uri   = "file://".$self->{__files}->{$label};
     my $photo = sprintf("%s%s/%s", $FLICKR_URL_PHOTOS, $data->{user_id}, $data->{photo_id});
 
     push @$triples, [$uri, $self->uri_shortform("rdfs", "seeAlso"), $photo];
@@ -1248,14 +1248,14 @@ sub make_photo_triples {
 sub hostname_short {
   my $self = shift;
 
-  if ($self->{'__hostname'}){
-    return $self->{'__hostname'};
+  if ($self->{__hostname}){
+    return $self->{__hostname};
   }
 
   my @parts = split(/\./, hostname());
   my $short = $parts[0];
 
-  $self->{'__hostname'} = $short;
+  $self->{__hostname} = $short;
   return $short;
 }
 
@@ -1427,7 +1427,7 @@ sub _has_callback {
   my $self = shift;
   my $name = shift;
 
-  my $cb = $self->{'__callbacks'};
+  my $cb = $self->{__callbacks};
 
   if (! exists($cb->{$name})) {
     return 0;
@@ -1445,7 +1445,7 @@ sub _has_callback {
 sub _execute_callback {
   my $self = shift;
   my $name = shift;
-  $self->{'__callbacks'}->{$name}->(@_);
+  $self->{__callbacks}->{$name}->(@_);
 }
 
 sub _mk_mindate {
