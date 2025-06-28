@@ -1947,7 +1947,7 @@ L<Net::Flickr::RDF>
 
 L<Config::Simple>
 
-http://www.flickr.com/services/api/misc.userauth.html
+L<Flickr's user authentication page|https://www.flickr.com/services/api/auth.oauth.html>
 
 =cut
 
