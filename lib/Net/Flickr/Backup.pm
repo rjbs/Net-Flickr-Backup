@@ -1,34 +1,27 @@
-# $Id: Backup.pm,v 1.107 2010/12/19 19:06:56 asc Exp $
-# -*-perl-*-
-
 use strict;
 use warnings;
 
 package Net::Flickr::Backup;
-use base qw (Net::Flickr::RDF);
+use parent qw(Net::Flickr::RDF);
 
-$Net::Flickr::Backup::VERSION = '3.1';
+use utf8;
 
-=head1 NAME
-
-Net::Flickr::Backup - OOP for backing up your Flickr photos locally
+# ABSTRACT: OOP for backing up your Flickr photos locally
 
 =head1 SYNOPSIS
 
-    use Net::Flickr::Backup;
-    use Log::Dispatch::Screen;
-    
-    my $flickr = Net::Flickr::Backup->new($cfg);
+  use Net::Flickr::Backup;
+  use Log::Dispatch::Screen;
 
-    my $feedback = Log::Dispatch::Screen->new('name'      => 'info',
-					      'min_level' => 'info');
+  my $flickr = Net::Flickr::Backup->new($cfg);
 
-    $flickr->log()->add($feedback);
-    $flickr->backup(); 
+  my $feedback = Log::Dispatch::Screen->new(
+    'name'      => 'info',
+    'min_level' => 'info',
+  );
 
-=head1 DESCRIPTION
-
-OOP for backing up your Flickr photos locally.
+  $flickr->log->add($feedback);
+  $flickr->backup;
 
 =head1 OPTIONS
 
@@ -39,33 +32,33 @@ a valid Config::Simple config file. Options are grouped by "block".
 
 =over 4
 
-=item * B<api_key>
+=item C<api_key>
 
 String. I<required>
 
 A valid Flickr API key.
 
-=item * B<api_secret>
+=item C<api_secret>
 
 String. I<required>
 
 A valid Flickr Auth API secret key.
 
-=item * B<auth_token>
+=item C<auth_token>
 
 String. I<required>
 
 A valid Flickr Auth API token.
 
-The B<api_handler> defines which XML/XPath handler to use to process API responses.
+The C<api_handler> defines which XML/XPath handler to use to process API responses.
 
-=over 4 
+=over 4
 
-=item * B<LibXML>
+=item C<LibXML>
 
 Use XML::LibXML.
 
-=item * B<XPath>
+=item C<XPath>
 
 Use XML::XPath.
 
@@ -77,68 +70,68 @@ Use XML::XPath.
 
 =over 4
 
-=item * B<photos_root>
+=item C<photos_root>
 
 String. I<required>
 
 The root folder where you want photographs to be stored. Individual
-files are named using the following pattern :
+files are named using the following pattern:
 
-  B<photos_root>/B<YYYY>/B<MM>/B<DD>/B<YYYYMMDD>-B<photo_id>-B<clean_title>_B<size>.jpg
+  <photos_root>/<YYYY>/<MM>/<DD>/<YYYYMMDD>-<photo_id>-<clean_title>_<size>.jpg
 
-Where the various components are :
+Where the various components are:
 
 =over 4
 
-=item * B<YYYYMMDD>
+=item C<YYYYMMDD>
 
- photo[@id=123]/dates/@taken
+  photo[@id=123]/dates/@taken
 
-=item * B<photo_id>
+=item C<photo_id>
 
-photo/@id
+  photo/@id
 
-=item * B<clean_title>
+=item C<clean_title>
 
- photo[@id=123]/title
+  photo[@id=123]/title
 
 Unicode characters translated in to ASCII (using Text::Unidecode) and the
 entire string is stripped anything that is not an alphanumeric, underbar,
 dash or a square bracket.
 
-=item * B<size>
+=item C<size>
 
 Net::Flickr::Backup will attempt to fetch not only the original file uploaded
 to Flickr but also, depending on your config options, the medium and square
-versions. Filenames will be modified as follows :
+versions. Filenames will be modified as follows:
 
-=over 4 
+=over 4
 
-=item * B<original>
+=item C<original>
 
 The original photo you uploaded to the Flickr servers. No extension is
 added.
 
-=item * B<medium>
+=item C<medium>
 
 These photos are scaled to 500 pixels at the longest dimension. A B<_m>
 extension is added.
 
-=item * B<medium_640>
+=item C<medium_640>
 
 These photos are scaled to 640 pixels at the longest dimension. A B<_z>
 extension is added.
 
-=item * B<square>
+=item C<square>
 
 These photos are to cropped to 75 x 75 pixels at the center. A B<_s>
 extension is added.
 
-=item * B<site_mp4>
+=item C<site_mp4>
 
 The MP4 version of a video uploaded to Flickr. A B<_site> extension is added.
 
-=item * B<video_original>
+=item C<video_original>
 
 An original video uploaded to Flickr. No extentsion is added.
 
@@ -146,41 +139,41 @@ An original video uploaded to Flickr. No extentsion is added.
 
 =back
 
-=item * B<fetch_original>
+=item C<fetch_original>
 
 Boolean.
 
-Retrieve the "original" version of a photo from the Flickr servers. 
+Retrieve the "original" version of a photo from the Flickr servers.
 
 Default is true.
 
-=item * B<fetch_video_original>
+=item C<fetch_video_original>
 
 Boolean.
 
-Retrieve the "original" version of a video from the Flickr servers. 
+Retrieve the "original" version of a video from the Flickr servers.
 
 Default is true.
 
-=item * B<fetch_medium>
+=item C<fetch_medium>
 
 Boolean.
 
 Retrieve the "medium" version of a photo from the Flickr servers; these photos
-have been scaled to 500 pixels at the longest dimension. 
+have been scaled to 500 pixels at the longest dimension.
 
 Default is false.
 
-=item * B<fetch_medium_640>
+=item C<fetch_medium_640>
 
 Boolean.
 
 Retrieve the "medium" version of a photo from the Flickr servers; these photos
-have been scaled to 640 pixels at the longest dimension. 
+have been scaled to 640 pixels at the longest dimension.
 
 Default is false.
 
-=item * B<fetch_square>
+=item C<fetch_square>
 
 Boolean.
 
@@ -189,7 +182,7 @@ have been cropped to 75 x 75 pixels at the center.
 
 Default is false.
 
-=item * B<fetch_site_mp4>
+=item C<fetch_site_mp4>
 
 Boolean.
 
@@ -197,7 +190,7 @@ Retrieve the "site MP4" version of a video from the Flickr servers;
 
 Default is false.
 
-=item * B<scrub_backups>
+=item C<scrub_backups>
 
 Boolean.
 
@@ -205,7 +198,7 @@ If true then, for each Flickr photo ID backed up, the library will check
 B<backup.photos_root> for images (and metadata files) with a matching ID but
 a different name. Matches will be deleted.
 
-=item * B<force>
+=item C<force>
 
 Boolean.
 
@@ -219,7 +212,7 @@ Default is false.
 
 =over 4
 
-=item * B<do_dump>
+=item C<do_dump>
 
 Boolean.
 
@@ -228,7 +221,7 @@ are written to disk in separate files.
 
 Default is false.
 
-=item * B<rdfdump_root>
+=item C<rdfdump_root>
 
 String.
 
@@ -238,7 +231,7 @@ is the same path as B<backup.photos_root>.
 File names are generated with the same pattern used to name
 photographs.
 
-=item * B<rdfdump_inline>
+=item C<rdfdump_inline>
 
 Boolean.
 
@@ -252,7 +245,7 @@ at so if you've got any suggestions on the subject, they'd be welcome.
 
 Default is false.
 
-=item * B<photos_alias>
+=item C<photos_alias>
 
 String.
 
@@ -261,13 +254,13 @@ B<backup.photos_root>.
 
 Default is to append the B<file:/> URI protocol to a path.
 
-=item * B<query_geonames>
+=item C<query_geonames>
 
 Boolean.
 
 If true and a photo has geodata (latitude, longitude) associated with it, then
-the geonames.org database will be queried for a corresponding match. Data will be 
-added as properties of the photo's geo:Point description. For example : 
+the geonames.org database will be queried for a corresponding match. Data will
+be added as properties of the photo's geo:Point description. For example:
 
  <geo:Point rdf:about="http://www.flickr.com/photos/35034348999@N01/272880469#location">
     <geo:long>-122.025151</geo:long>
@@ -293,7 +286,7 @@ added as properties of the photo's geo:Point description. For example :
 
 =over 4
 
-=item * B<do_dump>
+=item C<do_dump>
 
 Boolean.
 
@@ -302,9 +295,9 @@ as IPTC information.
 
 A photo's title is stored as the IPTC B<Headline>, description as B<Caption/Abstract>
 and tags are stored in one or more B<Keyword> headers. Per the IPTC 7901 spec,
-all text is converted to the ISO-8859-1 character encoding. 
+all text is converted to the ISO-8859-1 character encoding.
 
-For example :
+For example:
 
  exiv2 -pi /home/asc/photos/2006/06/20/20060620-171674319-mie.jpg
  Iptc.Application2.RecordVersion              Short       1  2
@@ -313,7 +306,7 @@ For example :
  Iptc.Application2.Keywords                   String      5  filtr
  Iptc.Application2.Keywords                   String      3  mie
  Iptc.Application2.Keywords                   String     20  upcoming:event=77752
- Iptc.Application2.Headline                   String      3  Mie  
+ Iptc.Application2.Headline                   String      3  Mie
 
 Default is false.
 
@@ -332,23 +325,23 @@ String.
 This specifies a time-based limiting criteria for fetching photos.
 
 The syntax is B<(n)(modifier)> where B<(n)> is a positive integer and B<(modifier)>
-may be one of the following :
+may be one of the following:
 
 =over 4
 
-=item * B<h>
+=item C<h>
 
 Fetch photos that have been modified in the last B<(n)> hours.
 
-=item * B<d>
+=item C<d>
 
 Fetch photos that have been modified in the last B<(n)> days.
 
-=item * B<w>
+=item C<w>
 
 Fetch photos that have been modified in the last B<(n)> weeks.
 
-=item * B<M>
+=item C<M>
 
 Fetch photos that have been modified in the last B<(n)> months.
 
@@ -356,7 +349,6 @@ Fetch photos that have been modified in the last B<(n)> months.
 
 =cut
 
-use utf8;
 use Encode;
 use English;
 use Data::Dumper;
@@ -380,16 +372,16 @@ use Memoize;
 use Sys::Hostname;
 
 Readonly::Hash my %FETCH_SIZES => (
-				   'Original' => '',
-				   'Medium'   => '_m',
-				   'Medium 640'   => '_z',
-				   'Square'   => '_s',
-				   'Video Original' => '',
-				   'Site MP4' => '_site',
-				   );
+        'Original' => '',
+        'Medium'   => '_m',
+        'Medium 640'   => '_z',
+        'Square'   => '_s',
+        'Video Original' => '',
+        'Site MP4' => '_site',
+        );
 
 Readonly::Scalar my $FLICKR_URL        => "http://www.flickr.com/";
-Readonly::Scalar my $FLICKR_URL_PHOTOS => $FLICKR_URL . "photos/";				      
+Readonly::Scalar my $FLICKR_URL_PHOTOS => $FLICKR_URL . "photos/";
 
 =head1 PACKAGE METHODS
 
@@ -406,20 +398,20 @@ Returns a I<Net::Flickr::Backup> object.
 sub init {
         my $self = shift;
         my $cfg  = shift;
-        
+
         if (! $self->SUPER::init($cfg)) {
                 return undef;
         }
-        
+
         #
         # Ensure that we have 'flickr' and 'backup'
         # config blocks
         #
 
         foreach my $block ('flickr', 'backup') {
-                
+
                 my $test = $self->{cfg}->param(-block=>$block);
-                
+
                 if (! keys %$test) {
                         $self->log()->error("unable to find any properties for $block block in config file");
                         return undef;
@@ -453,24 +445,24 @@ Returns true or false.
 sub backup {
         my $self = shift;
         my $args = shift;
-        
+
         my $auth = $self->get_auth();
-        
+
         if (! $auth) {
                 return 0;
         }
-        
+
         #
         #
         #
 
         my $photos_root = $self->{cfg}->param("backup.photos_root");
-        
+
         if (! $photos_root) {
                 $self->log()->error("no photo root defined, exiting");
                 return 0;
         }
-        
+
         #
         #
         #
@@ -509,22 +501,22 @@ sub backup {
 
         my $num_pages    = 0;
         my $current_page = 1;
-        
+
         my $poll = 1;
-        
+
         while ($poll) {
-                
+
                 if ($self->{'__cancel'}) {
                         last;
                 }
 
                 $poll_args->{page} = $current_page;
-                
+
                 #
-           
+
                 my $photos = $self->api_call({"method" => $poll_meth,
                                               args     => $poll_args});
-                
+
                 if (! $photos) {
                         return 0;
                 }
@@ -534,31 +526,31 @@ sub backup {
                 if (($current_page == 1) && ($self->_has_callback("start_backup_queue"))) {
                         $self->_execute_callback("start_backup_queue", $photos);
                 }
-                
+
                 $num_pages = $photos->find("/rsp/photos/\@pages")->string_value();
 
                 #
-                
+
                 foreach my $node ($photos->findnodes("/rsp/photos/photo")) {
-                        
+
                         if ($self->{'__cancel'}) {
                                 last;
                         }
 
                         $self->{'__files'} = {};
-                        
+
                         my $id      = $node->getAttribute("id");
                         my $secret  = $node->getAttribute("secret");
-                        
+
                         $self->log()->info(sprintf("process image %s (%s)",
                                                    $id, &_clean($node->getAttribute("title"))));
-                        
+
                         #
 
                         if ($self->_has_callback("start_backup_photo")) {
                                 $self->_execute_callback("start_backup_photo", $node);
                         }
-                        
+
                         my $ok = $self->backup_photo($id, $secret);
 
                         if ($self->_has_callback("finish_backup_photo")) {
@@ -566,27 +558,27 @@ sub backup {
                         }
 
                 }
-                
+
                 if ($current_page >= $num_pages) {
                         $poll = 0;
                 }
-                
+
                 $current_page ++;
         }
-        
+
         #
 
         if ($self->_has_callback("finish_backup_queue")) {
                 $self->_execute_callback("finish_backup_queue");
         }
-        
+
         #
-        
+
         if ((! $self->{'__cancel'}) && ($self->{cfg}->param("backup.scrub_backups"))) {
                 $self->log()->info("scrubbing backups");
                 $self->scrub();
         }
-        
+
         return 1;
 }
 
@@ -605,7 +597,7 @@ sub backup_photo {
         my $self   = shift;
         my $id     = shift;
         my $secret = shift;
-        
+
         # FIX ME : add 'skip' hash containing id+secret
         # If there is a problem storing photo data, ensure
         # that it is not accidentally scrubbed.
@@ -613,165 +605,165 @@ sub backup_photo {
         if (! $self->get_auth()) {
                 return 0;
         }
-        
+
         #
-        
+
         my $force       = $self->{cfg}->param("backup.force");
         my $photos_root = $self->{cfg}->param("backup.photos_root");
-        
+
         if (! $photos_root) {
                 $self->log()->error("no photo root defined, exiting");
                 return 0;
         }
-                
+
         #
 
         my $info = $self->api_call({method =>"flickr.photos.getInfo",
                                     args => {'photo_id' => $id,
                                              'secret' => $secret}});
-        
+
         if (! $info) {
                 return 0;
         }
-        
+
         $self->{'_scrub'}->{$id} = [];
-        
+
         my $img = ($info->findnodes("/rsp/photo"))[0];
-        
+
         if (! $img) {
                 return 0;
         }
-        
+
         my $dates = ($img->findnodes("dates"))[0];
-        
+
         my $last_update = $dates->getAttribute("lastupdate");
         my $has_changed = 1;
-        
+
         #
-        
+
         my %data = (photo_id => $id,
                     user_id  => $img->find("owner/\@nsid")->string_value(),
                     title    => $img->find("title")->string_value(),
                     taken    => $dates->getAttribute("taken"),
                     posted   => $dates->getAttribute("posted"),
                     lastmod  => $last_update);
-        
+
         #
-        
+
         my $title = &_clean($data{title}) || "untitled";
 
         my $dt = $data{taken};
-        
+
         $dt =~ /^(\d{4})-(\d{2})-(\d{2})/;
-        my ($yyyy,$mm,$dd) = ($1,$2,$3);	  	    
-        
+        my ($yyyy,$mm,$dd) = ($1,$2,$3);
+
         #
-        
+
         my $sizes = $self->api_call({method => "flickr.photos.getSizes",
                                      args   => {photo_id => $id}});
-        
+
         if (! $sizes) {
                 return 0;
         }
-        
+
         #
-        
+
         my $fetch_cfg = $self->{cfg}->param(-block=>"backup");
-        
+
         my $files_modified = 0;
 
         foreach my $label (keys %FETCH_SIZES) {
-                
-	    my $fetch_label = lc($label);
-	    $fetch_label =~ s/ /_/g;
+
+                my $fetch_label = lc($label);
+                $fetch_label =~ s/ /_/g;
 
                 my $fetch_param = "fetch_" . $fetch_label;
                 my $do_fetch    = 1;
-                
+
                 if (($label !~ /Original/) || (exists($fetch_cfg->{$fetch_param}))) {
                         $do_fetch = $fetch_cfg->{$fetch_param};
                 }
-                
+
                 if (! $do_fetch) {
                         $self->log()->debug("$fetch_param option is false, skipping");
                         next;
                 }
-                
+
                 #
-                
+
                 my $sz = ($sizes->findnodes("/rsp/sizes/size[\@label='$label']"))[0];
-                
+
                 if (! $sz) {
                         $self->log()->warning("Unable to locate size info for key $label\n");
                         next;
                 }
-                
+
                 my $source  = $sz->getAttribute("source");
 
-		my $ext = 'jpg';
+                my $ext = 'jpg';
 
-	        if (($label eq 'Site MP4') || ($label eq 'Video Original')){
+                if (($label eq 'Site MP4') || ($label eq 'Video Original')){
 
-		    my $ua = LWP::UserAgent->new();
-		    my $req = HTTP::Request->new('HEAD' => $source);
-		    my $res = $ua->request($req);
-		    my $headers = $res->headers();
-		    my $disp = $headers->{"content-disposition"};
+                        my $ua = LWP::UserAgent->new();
+                        my $req = HTTP::Request->new('HEAD' => $source);
+                        my $res = $ua->request($req);
+                        my $headers = $res->headers();
+                        my $disp = $headers->{"content-disposition"};
 
-		    $disp =~ /\.([^\.]+)$/;
-		    $ext = $1;
+                        $disp =~ /\.([^\.]+)$/;
+                        $ext = $1;
 
-		    $self->log()->info("video! $source has $disp becomes $ext");
-		}
+                        $self->log()->info("video! $source has $disp becomes $ext");
+                }
 
                 my $img_root  = File::Spec->catdir($photos_root, $yyyy, $mm, $dd);
                 my $img_fname = sprintf("%04d%02d%02d-%s-%s%s.%s", $yyyy, $mm, $dd, $id, $title, $FETCH_SIZES{$label}, $ext);
-                
+
                 $self->log()->info("scrub-store $img_fname");
                 push @{$self->{'_scrub'}->{$id}}, $img_fname;
-                
+
                 my $img_bak = File::Spec->catfile($img_root, $img_fname);
                 $self->{'__files'}->{$label} = $img_bak;
-                
+
                 #
-                
+
                 if ((-s $img_bak) && (! $force)){
 
                         if (! $has_changed){
                                 $self->log()->info("$img_bak has not changed, skipping\n");
                                 next;
                         }
-                        
+
                         my $mtime = (stat($img_bak))[9];
-                        
+
                         if ((-f $img_bak) && ($last_update) && ($mtime >= $last_update)){
                                 $self->log()->info("$img_bak has not changed ($mtime/$last_update), skipping\n");
                                 $has_changed = 0;
                                 next;
                         }
                 }
-                
+
                 #
-                
+
                 if (! -d $img_root) {
-                        
+
                         $self->log()->info("create $img_root");
-                        
+
                         if (! mkpath([$img_root], 0, 0755)) {
                                 $self->log()->error("failed to create $img_root, $!");
                                 next;
                         }
                 }
-                
+
                 if (! getstore($source, $img_bak)) {
                         $self->log()->error("failed to store '$source' as '$img_bak', $!\n");
                         next;
                 }
-                
+
                 $self->log()->info("stored $img_bak");
-                
+
                 #
-                
+
                 $files_modified ++;
         }
 
@@ -805,7 +797,7 @@ sub backup_photo {
                 #
 
                 if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
-                        
+
                         my $dump = $self->path_rdf_dumpfile($info);
                         $self->log()->info("test for rdf dump : $dump");
 
@@ -835,7 +827,7 @@ sub backup_photo {
         #
         # Is that RDF in your pants?
         #
-        
+
         if ($self->{cfg}->param("rdf.do_dump")) {
                 $self->store_rdf($info, $has_changed, $force);
         }
@@ -877,8 +869,8 @@ sub store_rdf {
 
         if ((! $force) && (! $has_changed) && (! $rdf_inline) && (-f $meta_bak)) {
                 return 1;
-        }       
-        
+        }
+
         #
         #
         #
@@ -886,21 +878,21 @@ sub store_rdf {
         my $meta_root = dirname($meta_bak);
 
         if ((! -d $meta_root) && (! $rdf_inline)) {
-                
+
                 $self->log()->info("create $meta_root");
-                
+
                 if (! mkpath([$meta_root], 0, 0755)) {
                         $self->log()->error("failed to create $meta_root, $!");
                         next;
                 }
-	}
-        
+        }
+
         #
         #
         #
 
         $self->log()->info("fetching RDF data for photo");
-        
+
         my $fh = undef;
 
         if ($rdf_inline) {
@@ -915,7 +907,7 @@ sub store_rdf {
                 $self->log()->error("failed to open '$meta_bak', $!");
                 return 0;
         }
-        
+
         #
         #
         #
@@ -923,7 +915,7 @@ sub store_rdf {
         my $desc_ok = $self->describe_photo({photo_id => $id,
                                              secret   => $secret,
                                              fh       => \*$fh});
-        
+
         if (! $desc_ok) {
                 $self->log()->error("failed to describe photo $id:$secret\n");
 
@@ -933,7 +925,7 @@ sub store_rdf {
 
                 return 0;
         }
-        
+
         #
         # JPEG/RDF COM
         #
@@ -1036,24 +1028,24 @@ Returns true or false.
 
 sub scrub {
         my $self = shift;
-        
+
         if (! keys %{$self->{'_scrub'}}) {
                 return 1;
         }
-        
+
         #
-        
+
         my $rule = File::Find::Rule->new();
         $rule->file();
-        
+
         $rule->exec(sub {
                             my ($shortname, $path, $fullname) = @_;
-                            
+
                             # $self->log()->info("test $shortname");
-                                    
+
                             $shortname =~ /^\d{8}-(\d+)-/;
                             my $id = $1;
-                         
+
                             if (! $id) {
                                     return 0;
                             }
@@ -1061,37 +1053,37 @@ sub scrub {
                             if (! exists($self->{'_scrub'}->{$id})) {
                                     return 0;
                             }
-                            
+
                             if (grep /$shortname/, @{$self->{'_scrub'}->{$id}}) {
                                     return 0;
                             }
-         
+
                             $self->log()->info("mark $fullname for scrubbing");
                             return 1;
                     });
-        
+
         #
-        
+
         foreach my $root ($rule->in($self->{'cfg'}->param("backup.photos_root"))) {
-                
+
                 $self->log()->info("unlink $root");
 
                 if (! unlink($root)) {
                         $self->log()->error("failed to unlink $root, $!");
                         next;
                 }
-                
+
                 # next unlink empty parent directories
-                
+
                 my $dd_dir   = dirname($root);
                 my $mm_dir   = dirname($dd_dir);
                 my $yyyy_dir = dirname($mm_dir);
-                
+
                 foreach my $path ($dd_dir, $mm_dir, $yyyy_dir) {
                         if (&_has_children($path)) {
                                 last;
                         }
-                        
+
                         else {
 
                                 $self->log()->info("unlink $path");
@@ -1101,11 +1093,11 @@ sub scrub {
                                         last;
                                 }
                         }
-                }	
+                }
         }
-        
+
         #
-        
+
         $self->{'_scrub'} = {};
         return 1;
 }
@@ -1126,24 +1118,24 @@ sub cancel_backup {
 
 B<This method is still considered experimental and may be removed.>
 
-Valid callback triggers are :
+Valid callback triggers are:
 
 =over 4
 
-=item * B<start_backup_queue>
+=item C<start_backup_queue>
 
 The list of photos to be backed up is pulled from the Flickr servers
 is done in batches. This trigger is invoked for the first successful
-result set. 
+result set.
 
 The callback function will be passed a I<XML::XPath> representation
 of the result document returned by the Flickr API.
 
-=item * B<finish_backup_queue>
+=item C<finish_backup_queue>
 
 This trigger is invoked after the last photo has been backed up.
 
-=item * B<start_backup_photo>
+=item C<start_backup_photo>
 
 This trigger is invoked before the object's B<backup_photo> method is
 called.
@@ -1151,13 +1143,13 @@ called.
 The callback function will be passed a I<XML::XPath> representation
 of the current photo, as returned by the Flickr API.
 
-=item * B<finish_backup_photo>
+=item C<finish_backup_photo>
 
 This trigger is invoked after the object's B<backup_photo> method is
 called.
 
 The callback function will be passed a I<XML::XPath> representation
-of the current photo, as returned by the Flickr API, followed by a 
+of the current photo, as returned by the Flickr API, followed by a
 boolean indicating whether or not the backup was successful.
 
 =back
@@ -1185,69 +1177,69 @@ sub register_callback {
 
 Returns a hash ref of the prefixes and namespaces used by I<Net::Flickr::RDF>
 
-The default key/value pairs are :
+The default key/value pairs are:
 
 =over 4
 
-=item B<a>
+=item C<a>
 
 http://www.w3.org/2000/10/annotation-ns
 
-=item B<acl>
+=item C<acl>
 
 http://www.w3.org/2001/02/acls#
 
-=item B<dc>
+=item C<dc>
 
 http://purl.org/dc/elements/1.1/
 
-=item B<dcterms>
+=item C<dcterms>
 
 http://purl.org/dc/terms/
 
-=item B<exif>
+=item C<exif>
 
 http://nwalsh.com/rdf/exif#
 
-=item B<exifi>
+=item C<exifi>
 
 http://nwalsh.com/rdf/exif-intrinsic#
 
-=item B<flickr>
+=item C<flickr>
 
 x-urn:flickr:
 
-=item B<foaf>
+=item C<foaf>
 
 http://xmlns.com/foaf/0.1/#
 
-=item B<geo> 
+=item C<geo>
 
 http://www.w3.org/2003/01/geo/wgs84_pos#
 
-=item B<i>
+=item C<i>
 
 http://www.w3.org/2004/02/image-regions#
 
-=item B<rdf>
+=item C<rdf>
 
 http://www.w3.org/1999/02/22-rdf-syntax-ns#
 
-=item B<rdfs>
+=item C<rdfs>
 
 http://www.w3.org/2000/01/rdf-schema#
 
-=item B<skos>
+=item C<skos>
 
 http://www.w3.org/2004/02/skos/core#
 
 =back
 
-I<Net::Flickr::Backup> adds the following namespaces :
+I<Net::Flickr::Backup> adds the following namespaces:
 
 =over 4
 
-=item B<computer>
+=item C<computer>
 
 x-urn:B<$OSNAME>: (where $OSNAME is the value of the English.pm
 $OSNAME variable.
@@ -1298,35 +1290,35 @@ method and the method returns undef.
 sub make_photo_triples {
         my $self = shift;
         my $data = shift;
-        
+
         my $triples = $self->SUPER::make_photo_triples($data);
-        
+
         if (! $triples) {
                 return undef;
         }
-        
+
         my $user_id     = (getpwuid($EUID))[0];
         my $os_uri      = sprintf("x-urn:%s:",$OSNAME);
         my $user_uri    = $os_uri."user";
-        
+
         my $creator_uri = sprintf("x-urn:%s#%s", $self->hostname_short(), $user_id);
-        
+
         push @$triples, [$user_uri, $self->uri_shortform("rdfs", "subClassOf"), "http://xmlns.com/foaf/0.1/Person"];
-        
+
         foreach my $label (keys %{$self->{'__files'}}) {
-                
+
                 my $uri   = "file://".$self->{'__files'}->{$label};
                 my $photo = sprintf("%s%s/%s", $FLICKR_URL_PHOTOS, $data->{user_id}, $data->{photo_id});
-                
+
                 push @$triples, [$uri, $self->uri_shortform("rdfs", "seeAlso"), $photo];
                 push @$triples, [$uri, $self->uri_shortform("dc", "creator"), $creator_uri];
                 push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), &_w3cdtf()];
         }
-        
+
         push @$triples, [$creator_uri, $self->uri_shortform("foaf", "name"), (getpwuid($EUID))[6]];
         push @$triples, [$creator_uri, $self->uri_shortform("foaf", "nick"), $user_id];
         push @$triples, [$creator_uri, $self->uri_shortform("rdf", "type"), "computer:user"];
-        
+
         return $triples;
 }
 
@@ -1338,8 +1330,8 @@ sub hostname_short {
         }
 
         my @parts = split(/\./, hostname());
-        my $short = $parts[0];                
-        
+        my $short = $parts[0];
+
         $self->{'__hostname'} = $short;
         return $short;
 }
@@ -1366,18 +1358,18 @@ B<default> list of namespaces.
 
 =head2 $obj->api_call(\%args)
 
-Valid args are :
+Valid args are:
 
 =over 4
 
-=item * B<method>
+=item C<method>
 
 A string containing the name of the Flickr API method you are
 calling.
 
-=item * B<args>
+=item C<args>
 
-A hash ref containing the key value pairs you are passing to 
+A hash ref containing the key value pairs you are passing to
 I<method>
 
 =back
@@ -1419,12 +1411,12 @@ sub path_rdf_dumpfile {
         $title     = &_clean($title);
 
         my $dt = $photo->find("/rsp/photo/dates/\@taken")->string_value();
-        
+
         $dt =~ /^(\d{4})-(\d{2})-(\d{2})/;
-        my ($yyyy,$mm,$dd) = ($1,$2,$3);	  	    
+        my ($yyyy,$mm,$dd) = ($1,$2,$3);
 
         my $meta_root  = File::Spec->catdir($rdf_root, $yyyy, $mm, $dd);
-        my $meta_fname = sprintf("%04d%02d%02d-%s-%s.xml", $yyyy, $mm, $dd, $id, $title);	
+        my $meta_fname = sprintf("%04d%02d%02d-%s-%s.xml", $yyyy, $mm, $dd, $id, $title);
         my $meta_path  = File::Spec->catfile($meta_root, $meta_fname);
 
         return $meta_path;
@@ -1432,29 +1424,29 @@ sub path_rdf_dumpfile {
 
 sub _clean {
         my $str = shift;
-        
+
         $str = lc($str);
-        
+
         $str =~ s/\.jpg$//;
-        
+
         # unidecode to convert everything to
         # happy happy ASCII
-        
+
         # see also : http://perladvent.org/2004/12th/
-        
+
         $str = unidecode(&_unescape(&_decode($str)));
-        
+
         $str =~ s/@/at/g;
         $str =~ s/&/and/g;
         $str =~ s/\*/star/g;
-        
+
         $str =~ s/[^a-z0-9-_]/ /ig;
         $str =~ s/'//g;
         $str =~ s/\^//g;
-        
+
         # make all whitespace single spaces
         $str =~ s/\s+/ /g;
-        
+
         # remove starting or trailing whitespace
         $str =~ s/^\s+//;
         $str =~ s/\s+$//;
@@ -1464,17 +1456,17 @@ sub _clean {
 
         # make all spaces underscores
         $str =~ s/ /_/g;
-        
+
         return $str;
 }
 
 sub _decode {
         my $str = shift;
-        
+
         if (! utf8::is_utf8($str)) {
                 $str = decode_utf8($str);
         }
-        
+
         $str =~ s/(?:%([a-fA-F0-9]{2})%([a-fA-F0-9]{2}))/pack("U0U*", hex($1), hex($2))/eg;
         return $str;
 }
@@ -1483,11 +1475,11 @@ sub _decode {
 
 sub _unescape {
         my $str = shift;
-        
+
         if (defined($str)) {
                 $str =~ s/%([0-9A-Fa-f]{2})/chr(hex($1))/eg;
         }
-        
+
         return $str;
 }
 
@@ -1503,7 +1495,7 @@ sub _has_children {
 sub _w3cdtf {
         my ($sec, $min, $hour, $mday, $mon, $year) = gmtime();
         $mon++; $year += 1900;
-        
+
         return sprintf("%04s-%02s-%02sT%02s:%02s:%02sZ",
                        $year, $mon, $mday, $hour, $min, $sec);
 }
@@ -1535,36 +1527,36 @@ sub _execute_callback {
 
 sub _mk_mindate {
         my $str = shift;
-        
+
         $str =~ /^(\d+)([hdwM])$/;
-        
+
         my $count  = $1;
         my $period = $2;
-        
+
         # print "count $count : period $period\n";
-        
+
         if ((! $count) || (! $period)) {
                 return 0;
         }
-        
+
         #
-        
+
         if ($period eq "h") {
                 return time() - ($count * (60 * 60));
         }
-        
+
         elsif ($period eq "d") {
                 return time() - ($count * (24 * (60 * 60)));
         }
-        
+
         elsif ($period eq "w") {
                 return time() - ($count * (7 * (24 * (60 * 60))));
         }
-        
+
         elsif ($period eq "M") {
                 return time() - ($count * (4 * (7 * (24 * (60 * 60)))));
         }
-        
+
         else {
                 return 0;
         }
@@ -1575,7 +1567,7 @@ sub _jpeg_handler {
         my $img  = shift;
 
         eval "require Image::MetaData::JPEG";
-        
+
         if ($@) {
                 $self->log()->error("Failed to load Image::MetaData::JPEG, $@");
                 return undef;
@@ -1593,7 +1585,7 @@ sub _jpeg_handler {
 
 sub _iptcify {
         my $self = shift;
-        return encode("iso-8859-1", &_decode($_[0])); 
+        return encode("iso-8859-1", &_decode($_[0]));
 }
 
 =head1 EXAMPLES
@@ -1605,7 +1597,7 @@ sub _iptcify {
 This is an example of a Config::Simple file used to back up photos tagged
 with 'cameraphone' from Flickr
 
- [flickr] 
+ [flickr]
  api_key=asd6234kjhdmbzcxi6e323
  api_secret=s00p3rs3k3t
  auth_token=123-omgwtf4u
@@ -1629,10 +1621,10 @@ with 'cameraphone' from Flickr
 =head2 RDF
 
 This is an example of an RDF dump for a photograph backed up from
-Flickr (using Net::Flickr::RDF) :
+Flickr (using Net::Flickr::RDF):
 
 
- <?xml version='1.0'?>    
+ <?xml version='1.0'?>
  <rdf:RDF
   xmlns:geoname="http://www.geonames.org/onto#"
   xmlns:a="http://www.w3.org/2000/10/annotation-ns"
