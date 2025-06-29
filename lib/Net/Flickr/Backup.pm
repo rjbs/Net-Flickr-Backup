@@ -385,11 +385,11 @@ my $FLICKR_URL_PHOTOS = $FLICKR_URL . "photos/";
 
 my $UA = LWP::UserAgent->new;
 
-=head1 PACKAGE METHODS
+=head1 CLASS METHODS
 
 =cut
 
-=head2 __PACKAGE__->new($cfg)
+=head2 Net::Flickr::Backup->new($cfg)
 
 Returns a I<Net::Flickr::Backup> object.
 
