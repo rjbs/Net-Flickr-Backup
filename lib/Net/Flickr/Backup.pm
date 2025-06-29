@@ -350,7 +350,7 @@ Fetch photos that have been modified in the last B<(n)> months.
 =cut
 
 use Encode;
-use Data::Dumper;
+use JSON::PP;
 
 use Text::Unidecode;
 
@@ -475,7 +475,7 @@ sub backup {
     $self->{__lastmod_since} = $min_date;
   }
 
-  $self->log->info("search args ($poll_meth): " . Dumper($poll_args));
+  $self->log->info("search args ($poll_meth): " .  JSON::PP->new->canonical->encode($poll_args));
 
   my $num_pages    = 0;
   my $current_page = 1;
