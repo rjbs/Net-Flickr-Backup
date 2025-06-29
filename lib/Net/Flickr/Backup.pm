@@ -453,12 +453,14 @@ sub backup {
     return 0;
   }
 
-  my $poll_meth = "flickr.photos.search";
-  my $poll_args = $self->{cfg}->param(-block=>"search");
+  my $poll_meth;
+  my $poll_args = $self->{cfg}->param(-block => "search");
 
-  $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value;
-
-  if (my $min_date = $self->{cfg}->param("search.modified_since")) {
+  if (my $min_date = delete $poll_args->{"modified_since"}) {
+    if (keys %$poll_args) {
+      $self->log->error("search.modified_since provided, but also other search options, which won't work");
+      return 0;
+    }
 
     if ($min_date !~ /^\d+$/) {
       $min_date = _mk_mindate($min_date);
@@ -473,6 +475,9 @@ sub backup {
     $poll_args = { min_date => $min_date };
 
     $self->{__lastmod_since} = $min_date;
+  } else {
+    $poll_meth = "flickr.photos.search";
+    $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value;
   }
 
   $self->log->info("search args ($poll_meth): " .  JSON::PP->new->canonical->encode($poll_args));
