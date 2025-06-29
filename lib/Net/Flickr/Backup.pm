@@ -491,8 +491,8 @@ sub backup {
     $poll_args->{page} = $current_page;
 
     my $photos = $self->api_call({
-      "method" => $poll_meth,
-      args     => $poll_args,
+      method  => $poll_meth,
+      args    => $poll_args,
     });
 
     if (! $photos) {
