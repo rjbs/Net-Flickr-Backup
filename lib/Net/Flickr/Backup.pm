@@ -372,12 +372,12 @@ use Memoize;
 use Sys::Hostname;
 
 my %FETCH_SIZES = (
-  'Original' => '',
-  'Medium'   => '_m',
-  'Medium 640'   => '_z',
-  'Square'   => '_s',
+  'Medium 640'     => '_z',
+  'Medium'         => '_m',
+  'Original'       => '',
+  'Site MP4'       => '_site',
+  'Square'         => '_s',
   'Video Original' => '',
-  'Site MP4' => '_site',
 );
 
 my $FLICKR_URL        = "https://www.flickr.com/";
