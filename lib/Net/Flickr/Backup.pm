@@ -383,6 +383,8 @@ my %FETCH_SIZES = (
 my $FLICKR_URL        = "https://www.flickr.com/";
 my $FLICKR_URL_PHOTOS = $FLICKR_URL . "photos/";
 
+my $UA = LWP::UserAgent->new;
+
 =head1 PACKAGE METHODS
 
 =cut
@@ -676,9 +678,8 @@ sub backup_photo {
 
     if (($label eq 'Site MP4') || ($label eq 'Video Original')) {
 
-      my $ua = LWP::UserAgent->new();
       my $req = HTTP::Request->new('HEAD' => $source);
-      my $res = $ua->request($req);
+      my $res = $UA->request($req);
       my $headers = $res->headers();
 
       my $type = $headers->content_type;
@@ -735,7 +736,7 @@ sub backup_photo {
       }
     }
 
-    if (! getstore($source, $img_bak)) {
+    if (! $UA->mirror($source, $img_bak)->is_success) {
       $self->log()->error("failed to store '$source' as '$img_bak', $!");
       next;
     }
