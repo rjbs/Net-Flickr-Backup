@@ -350,7 +350,6 @@ Fetch photos that have been modified in the last B<(n)> months.
 =cut
 
 use Encode;
-use English;
 use Data::Dumper;
 
 use Text::Unidecode;
@@ -1191,8 +1190,7 @@ I<Net::Flickr::Backup> adds the following namespaces:
 
 =item C<computer>
 
-x-urn:B<$OSNAME>: (where $OSNAME is the value of the English.pm
-$OSNAME variable.
+x-urn:B<$OSNAME>: (where $OSNAME is the value of C<$^O>)
 
 =back
 
@@ -1201,7 +1199,7 @@ $OSNAME variable.
 sub namespaces {
   my $self = shift;
   my %ns = %{$self->SUPER::namespaces};
-  $ns{computer} = sprintf("x-urn:%s:",$OSNAME);
+  $ns{computer} = sprintf "x-urn:%s:", $^O;
   return (wantarray) ? %ns : \%ns;
 }
 
@@ -1247,8 +1245,8 @@ sub make_photo_triples {
     return undef;
   }
 
-  my $user_id     = (getpwuid($EUID))[0];
-  my $os_uri      = sprintf("x-urn:%s:",$OSNAME);
+  my $user_id     = (getpwuid($>))[0];
+  my $os_uri      = sprintf("x-urn:%s:",$^O);
   my $user_uri    = $os_uri."user";
 
   my $creator_uri = sprintf("x-urn:%s#%s", $self->hostname_short, $user_id);
@@ -1265,7 +1263,7 @@ sub make_photo_triples {
     push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), _w3cdtf() ];
   }
 
-  push @$triples, [$creator_uri, $self->uri_shortform("foaf", "name"), (getpwuid($EUID))[6]];
+  push @$triples, [$creator_uri, $self->uri_shortform("foaf", "name"), (getpwuid($>))[6]];
   push @$triples, [$creator_uri, $self->uri_shortform("foaf", "nick"), $user_id];
   push @$triples, [$creator_uri, $self->uri_shortform("rdf", "type"), "computer:user"];
 
