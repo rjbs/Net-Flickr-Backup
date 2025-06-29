@@ -412,7 +412,7 @@ sub init {
     my $test = $self->{cfg}->param(-block=>$block);
 
     if (! keys %$test) {
-      $self->log()->error("unable to find any properties for $block block in config file");
+      $self->log->error("unable to find any properties for $block block in config file");
       return undef;
     }
   }
@@ -431,7 +431,7 @@ sub init {
 
 =cut
 
-=head2 $obj->backup()
+=head2 $obj->backup
 
 Returns true or false.
 
@@ -441,7 +441,7 @@ sub backup {
   my $self = shift;
   my $args = shift;
 
-  my $auth = $self->get_auth();
+  my $auth = $self->get_auth;
 
   if (! $auth) {
     return 0;
@@ -450,14 +450,14 @@ sub backup {
   my $photos_root = $self->{cfg}->param("backup.photos_root");
 
   if (! $photos_root) {
-    $self->log()->error("no photo root defined, exiting");
+    $self->log->error("no photo root defined, exiting");
     return 0;
   }
 
   my $poll_meth = "flickr.photos.search";
   my $poll_args = $self->{cfg}->param(-block=>"search");
 
-  $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value();
+  $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value;
 
   if (my $min_date = $self->{cfg}->param("search.modified_since")) {
 
@@ -465,7 +465,7 @@ sub backup {
       $min_date = _mk_mindate($min_date);
 
       if (! $min_date) {
-        $self->log()->error("unable to parse min date criteria, exiting");
+        $self->log->error("unable to parse min date criteria, exiting");
         return 0;
       }
     }
@@ -476,7 +476,7 @@ sub backup {
     $self->{__lastmod_since} = $min_date;
   }
 
-  $self->log()->info("search args ($poll_meth): " . Dumper($poll_args));
+  $self->log->info("search args ($poll_meth): " . Dumper($poll_args));
 
   my $num_pages    = 0;
   my $current_page = 1;
@@ -504,7 +504,7 @@ sub backup {
       $self->_execute_callback("start_backup_queue", $photos);
     }
 
-    $num_pages = $photos->find("/rsp/photos/\@pages")->string_value();
+    $num_pages = $photos->find("/rsp/photos/\@pages")->string_value;
 
     foreach my $node ($photos->findnodes("/rsp/photos/photo")) {
 
@@ -517,7 +517,7 @@ sub backup {
       my $id      = $node->getAttribute("id");
       my $secret  = $node->getAttribute("secret");
 
-      $self->log()->info(
+      $self->log->info(
         sprintf "process image %s (%s)",
         $id,
         _clean($node->getAttribute("title"))
@@ -547,8 +547,8 @@ sub backup {
   }
 
   if ((! $self->{__cancel}) && ($self->{cfg}->param("backup.scrub_backups"))) {
-    $self->log()->info("scrubbing backups");
-    $self->scrub();
+    $self->log->info("scrubbing backups");
+    $self->scrub;
   }
 
   return 1;
@@ -574,7 +574,7 @@ sub backup_photo {
   # If there is a problem storing photo data, ensure
   # that it is not accidentally scrubbed.
 
-  if (! $self->get_auth()) {
+  if (! $self->get_auth) {
     return 0;
   }
 
@@ -582,7 +582,7 @@ sub backup_photo {
   my $photos_root = $self->{cfg}->param("backup.photos_root");
 
   if (! $photos_root) {
-    $self->log()->error("no photo root defined, exiting");
+    $self->log->error("no photo root defined, exiting");
     return 0;
   }
 
@@ -614,8 +614,8 @@ sub backup_photo {
 
   my %data = (
     photo_id => $id,
-    user_id  => $img->find("owner/\@nsid")->string_value(),
-    title    => $img->find("title")->string_value(),
+    user_id  => $img->find("owner/\@nsid")->string_value,
+    title    => $img->find("title")->string_value,
     taken    => $dates->getAttribute("taken"),
     posted   => $dates->getAttribute("posted"),
     lastmod  => $last_update
@@ -661,14 +661,14 @@ sub backup_photo {
     }
 
     if (! $do_fetch) {
-      $self->log()->debug("$fetch_param option is false, skipping");
+      $self->log->debug("$fetch_param option is false, skipping");
       next;
     }
 
     my $sz = ($sizes->findnodes("/rsp/sizes/size[\@label='$label']"))[0];
 
     if (! $sz) {
-      $self->log()->warning("Unable to locate size info for key $label");
+      $self->log->warning("Unable to locate size info for key $label");
       next;
     }
 
@@ -680,7 +680,7 @@ sub backup_photo {
 
       my $req = HTTP::Request->new('HEAD' => $source);
       my $res = $UA->request($req);
-      my $headers = $res->headers();
+      my $headers = $res->headers;
 
       my $type = $headers->content_type;
       $type =~ m{^video/([-a-z0-9]+)};
@@ -689,22 +689,22 @@ sub backup_photo {
            : $1          ? "video-$1"
            :               "video-unknown";
 
-      $self->log()->info("picking extension $ext from Content-Type $type of video resource");
+      $self->log->info("picking extension $ext from Content-Type $type of video resource");
     } else {
       # Absurd. -- rjbs, 2025-06-28
       ($ext) = $source =~ /\.([^.]{3,4})\z/;
-      $self->log()->info("picking extension $ext from source URL $source");
+      $self->log->info("picking extension $ext from source URL $source");
     }
 
     unless ($ext) {
-      $self->log()->info("picking extension 'unknown' because nothing else worked");
+      $self->log->info("picking extension 'unknown' because nothing else worked");
       $ext = 'unknown';
     }
 
     my $img_root  = File::Spec->catdir($photos_root, $yyyy, $mm, $dd);
     my $img_fname = sprintf("%04d%02d%02d-%s-%s%s.%s", $yyyy, $mm, $dd, $id, $title, $FETCH_SIZES{$label}, $ext);
 
-    $self->log()->info("scrub-store $img_fname");
+    $self->log->info("scrub-store $img_fname");
     push @{$self->{_scrub}->{$id}}, $img_fname;
 
     my $img_bak = File::Spec->catfile($img_root, $img_fname);
@@ -713,14 +713,14 @@ sub backup_photo {
     if ((-s $img_bak) && (! $force)){
 
       if (! $has_changed){
-        $self->log()->info("$img_bak has not changed, skipping");
+        $self->log->info("$img_bak has not changed, skipping");
         next;
       }
 
       my $mtime = (stat($img_bak))[9];
 
       if ((-f $img_bak) && ($last_update) && ($mtime >= $last_update)){
-        $self->log()->info("$img_bak has not changed ($mtime/$last_update), skipping");
+        $self->log->info("$img_bak has not changed ($mtime/$last_update), skipping");
         $has_changed = 0;
         next;
       }
@@ -728,20 +728,20 @@ sub backup_photo {
 
     if (! -d $img_root) {
 
-      $self->log()->info("create $img_root");
+      $self->log->info("create $img_root");
 
       if (! mkpath([$img_root], 0, 0755)) {
-        $self->log()->error("failed to create $img_root, $!");
+        $self->log->error("failed to create $img_root, $!");
         next;
       }
     }
 
     if (! $UA->mirror($source, $img_bak)->is_success) {
-      $self->log()->error("failed to store '$source' as '$img_bak', $!");
+      $self->log->error("failed to store '$source' as '$img_bak', $!");
       next;
     }
 
-    $self->log()->info("stored $img_bak");
+    $self->log->info("stored $img_bak");
 
     $files_modified ++;
   }
@@ -755,16 +755,16 @@ sub backup_photo {
 
   $has_changed = ($files_modified) ? 1 : 0;
 
-  $self->log()->info("has changed (filemod): $has_changed");
+  $self->log->info("has changed (filemod): $has_changed");
 
   if ((! $has_changed) && (! $force)) {
 
     my $lastmod = $self->{__lastmod_since};
-    $self->log()->info("last mod: $lastmod");
+    $self->log->info("last mod: $lastmod");
 
     if (($lastmod) && ($last_update >= $lastmod)) {
       $has_changed = 1;
-      $self->log()->info("has changed (update): $has_changed ($last_update - $lastmod)");
+      $self->log->info("has changed (update): $has_changed ($last_update - $lastmod)");
     }
 
     # Ensure the RDF file is there and up to date
@@ -772,22 +772,22 @@ sub backup_photo {
     if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
 
       my $dump = $self->path_rdf_dumpfile($info);
-      $self->log()->info("test for rdf dump: $dump");
+      $self->log->info("test for rdf dump: $dump");
 
       if (($has_changed) && (-f $dump)) {
 
         my $dumpmod = (stat($dump))[9];
-        $self->log()->info("rdf dump: $dump");
+        $self->log->info("rdf dump: $dump");
 
         if ($dumpmod >= $lastmod) {
           $has_changed = 0;
-          $self->log()->info("has changed (rdf): $has_changed ($last_update - $dumpmod)");
+          $self->log->info("has changed (rdf): $has_changed ($last_update - $dumpmod)");
         }
       }
 
       else {
         if (! -f $dump) {
-          $self->log()->info("rdf dump does not exist: $dump");
+          $self->log->info("rdf dump does not exist: $dump");
           $has_changed = 1;
         }
       }
@@ -795,7 +795,7 @@ sub backup_photo {
 
   }
 
-  $self->log()->info("has changed (final): $has_changed");
+  $self->log->info("has changed (final): $has_changed");
 
   # We want RDF
   if ($self->{cfg}->param("rdf.do_dump")) {
@@ -828,8 +828,8 @@ sub store_rdf {
     $rdf_root = $self->{cfg}->param("backup.photos_root");
   }
 
-  my $secret = $photo->find("/rsp/photo/\@originalsecret")->string_value();
-  my $id     = $photo->find("/rsp/photo/\@id")->string_value();
+  my $secret = $photo->find("/rsp/photo/\@originalsecret")->string_value;
+  my $id     = $photo->find("/rsp/photo/\@id")->string_value;
 
   my $meta_bak   = $self->path_rdf_dumpfile($photo);
   my $meta_str   = "";
@@ -842,15 +842,15 @@ sub store_rdf {
 
   if ((! -d $meta_root) && (! $rdf_inline)) {
 
-    $self->log()->info("create $meta_root");
+    $self->log->info("create $meta_root");
 
     if (! mkpath([$meta_root], 0, 0755)) {
-      $self->log()->error("failed to create $meta_root, $!");
+      $self->log->error("failed to create $meta_root, $!");
       next;
     }
   }
 
-  $self->log()->info("fetching RDF data for photo");
+  $self->log->info("fetching RDF data for photo");
 
   my $fh = undef;
 
@@ -863,7 +863,7 @@ sub store_rdf {
   }
 
   if (! $fh) {
-    $self->log()->error("failed to open '$meta_bak', $!");
+    $self->log->error("failed to open '$meta_bak', $!");
     return 0;
   }
 
@@ -874,10 +874,10 @@ sub store_rdf {
   });
 
   if (! $desc_ok) {
-    $self->log()->error("failed to describe photo $id:$secret");
+    $self->log->error("failed to describe photo $id:$secret");
 
     if (! $rdf_inline){
-      $fh->delete();
+      $fh->delete;
     }
 
     return 0;
@@ -891,8 +891,8 @@ sub store_rdf {
   }
 
   else {
-    if (! $fh->close()) {
-      $self->log()->error("failed to write '$meta_bak', $!");
+    if (! $fh->close) {
+      $self->log->error("failed to write '$meta_bak', $!");
       return 0;
     }
   }
@@ -925,12 +925,12 @@ sub store_iptc_inline {
   }
 
   my %iptc = (
-    'Headline' => $self->_iptcify($photo->find("/rsp/photo/title")->string_value()),
-    'Caption/Abstract' => $self->_iptcify($photo->find("/rsp/photo/description")->string_value()),
+    'Headline' => $self->_iptcify($photo->find("/rsp/photo/title")->string_value),
+    'Caption/Abstract' => $self->_iptcify($photo->find("/rsp/photo/description")->string_value),
     'Keywords' => [],
   );
 
-  my @tags = ();
+  my @tags;
 
   foreach my $tag ($photo->findnodes("/rsp/photo/tags/tag")) {
     my $raw = $self->_iptcify($tag->getAttribute("raw"));
@@ -943,12 +943,12 @@ sub store_iptc_inline {
   }
 
   if (! $im->set_app13_data(\%iptc, 'UPDATE', 'IPTC')) {
-    $self->log()->error("Failed to updated IPTC");
+    $self->log->error("Failed to updated IPTC");
     return 0;
   }
 
   if (! $im->save($original)) {
-    $self->log()->error("Failed store IPTC, $!");
+    $self->log->error("Failed store IPTC, $!");
     return 0;
   }
 
@@ -969,14 +969,14 @@ sub store_rdf_inline {
   $im->add_comment($$str_rdf);
 
   if (! $im->save("$path_jpg")) {
-    $self->log()->error("Failed store COM block, $!");
+    $self->log->error("Failed store COM block, $!");
     return 0;
   }
 
   return 1;
 }
 
-=head2 $obj->scrub()
+=head2 $obj->scrub
 
 Returns true or false.
 
@@ -989,13 +989,13 @@ sub scrub {
     return 1;
   }
 
-  my $rule = File::Find::Rule->new();
-  $rule->file();
+  my $rule = File::Find::Rule->new;
+  $rule->file;
 
   $rule->exec(sub {
     my ($shortname, $path, $fullname) = @_;
 
-    # $self->log()->info("test $shortname");
+    # $self->log->info("test $shortname");
 
     $shortname =~ /^\d{8}-(\d+)-/;
     my $id = $1;
@@ -1012,16 +1012,16 @@ sub scrub {
       return 0;
     }
 
-    $self->log()->info("mark $fullname for scrubbing");
+    $self->log->info("mark $fullname for scrubbing");
     return 1;
   });
 
   foreach my $root ($rule->in($self->{cfg}->param("backup.photos_root"))) {
 
-    $self->log()->info("unlink $root");
+    $self->log->info("unlink $root");
 
     if (! unlink($root)) {
-      $self->log()->error("failed to unlink $root, $!");
+      $self->log->error("failed to unlink $root, $!");
       next;
     }
 
@@ -1038,10 +1038,10 @@ sub scrub {
 
       else {
 
-        $self->log()->info("unlink $path");
+        $self->log->info("unlink $path");
 
         if (! rmtree([$path], 0, 1)) {
-          $self->log()->error("failed to unlink, $path");
+          $self->log->error("failed to unlink, $path");
           last;
         }
       }
@@ -1052,7 +1052,7 @@ sub scrub {
   return 1;
 }
 
-=head2 $obj->cancel_backup()
+=head2 $obj->cancel_backup
 
 Cancel the backup process as soon as the current photo backup
 is complete.
@@ -1123,7 +1123,7 @@ sub register_callback {
 }
 
 
-=head2 $obj->namespaces()
+=head2 $obj->namespaces
 
 Returns a hash ref of the prefixes and namespaces used by I<Net::Flickr::RDF>
 
@@ -1200,7 +1200,7 @@ $OSNAME variable.
 
 sub namespaces {
   my $self = shift;
-  my %ns = %{$self->SUPER::namespaces()};
+  my %ns = %{$self->SUPER::namespaces};
   $ns{computer} = sprintf("x-urn:%s:",$OSNAME);
   return (wantarray) ? %ns : \%ns;
 }
@@ -1251,7 +1251,7 @@ sub make_photo_triples {
   my $os_uri      = sprintf("x-urn:%s:",$OSNAME);
   my $user_uri    = $os_uri."user";
 
-  my $creator_uri = sprintf("x-urn:%s#%s", $self->hostname_short(), $user_id);
+  my $creator_uri = sprintf("x-urn:%s#%s", $self->hostname_short, $user_id);
 
   push @$triples, [$user_uri, $self->uri_shortform("rdfs", "subClassOf"), "http://xmlns.com/foaf/0.1/Person"];
 
@@ -1262,7 +1262,7 @@ sub make_photo_triples {
 
     push @$triples, [$uri, $self->uri_shortform("rdfs", "seeAlso"), $photo];
     push @$triples, [$uri, $self->uri_shortform("dc", "creator"), $creator_uri];
-    push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), _w3cdtf()];
+    push @$triples, [$uri, $self->uri_shortform("dcterms", "created"), _w3cdtf() ];
   }
 
   push @$triples, [$creator_uri, $self->uri_shortform("foaf", "name"), (getpwuid($EUID))[6]];
@@ -1279,7 +1279,7 @@ sub hostname_short {
     return $self->{__hostname};
   }
 
-  my @parts = split(/\./, hostname());
+  my @parts = split(/\./, hostname);
   my $short = $parts[0];
 
   $self->{__hostname} = $short;
@@ -1335,7 +1335,7 @@ installed) or a I<XML::XPath> object.
 
 # Defined in Net::Flickr::API
 
-=head2 $obj->log()
+=head2 $obj->log
 
 Returns a I<Log::Dispatch> object.
 
@@ -1355,12 +1355,12 @@ sub path_rdf_dumpfile {
     $rdf_root = $self->{cfg}->param("backup.photos_root");
   }
 
-  my $id     = $photo->find("/rsp/photo/\@id")->string_value();
-  my $secret = $photo->find("/rsp/photo/\@secret")->string_value();
-  my $title  = $photo->find("/rsp/photo/title")->string_value() || "untitled";
+  my $id     = $photo->find("/rsp/photo/\@id")->string_value;
+  my $secret = $photo->find("/rsp/photo/\@secret")->string_value;
+  my $title  = $photo->find("/rsp/photo/title")->string_value || "untitled";
   $title     = _clean($title);
 
-  my $dt = $photo->find("/rsp/photo/dates/\@taken")->string_value();
+  my $dt = $photo->find("/rsp/photo/dates/\@taken")->string_value;
 
   $dt =~ /^(\d{4})-(\d{2})-(\d{2})/;
   my ($yyyy,$mm,$dd) = ($1,$2,$3);
@@ -1436,14 +1436,14 @@ sub _unescape {
 sub _has_children {
   my $path = shift;
   my $dh = DirHandle->new($path);
-  my $has = grep { $_ !~ /^\.+$/ } $dh->read();
+  my $has = grep { $_ !~ /^\.+$/ } $dh->read;
   return $has;
 }
 
 # Borrowed from LWP::Authen::Wsse
 
 sub _w3cdtf {
-  my ($sec, $min, $hour, $mday, $mon, $year) = gmtime();
+  my ($sec, $min, $hour, $mday, $mon, $year) = gmtime;
   $mon++; $year += 1900;
 
   return sprintf("%04s-%02s-%02sT%02s:%02s:%02sZ",
@@ -1490,19 +1490,19 @@ sub _mk_mindate {
   }
 
   if ($period eq "h") {
-    return time() - ($count * (60 * 60));
+    return time - ($count * (60 * 60));
   }
 
   elsif ($period eq "d") {
-    return time() - ($count * (24 * (60 * 60)));
+    return time - ($count * (24 * (60 * 60)));
   }
 
   elsif ($period eq "w") {
-    return time() - ($count * (7 * (24 * (60 * 60))));
+    return time - ($count * (7 * (24 * (60 * 60))));
   }
 
   elsif ($period eq "M") {
-    return time() - ($count * (4 * (7 * (24 * (60 * 60)))));
+    return time - ($count * (4 * (7 * (24 * (60 * 60)))));
   }
 
   else {
@@ -1517,14 +1517,14 @@ sub _jpeg_handler {
   eval "require Image::MetaData::JPEG";
 
   if ($@) {
-    $self->log()->error("Failed to load Image::MetaData::JPEG, $@");
+    $self->log->error("Failed to load Image::MetaData::JPEG, $@");
     return undef;
   }
 
   my $im = Image::MetaData::JPEG->new($img, @_);
 
   if (! $im) {
-    $self->log()->error("Failed to read $img, " . Image::MetaData::JPEG::Error());
+    $self->log->error("Failed to read $img, " . Image::MetaData::JPEG::Error());
     return undef;
   }
 
