@@ -670,11 +670,11 @@ sub backup_photo {
       next;
     }
 
-    my $source  = $sz->getAttribute("source");
+    my $source = $sz->getAttribute("source");
 
-    my $ext = 'jpg';
+    my $ext;
 
-    if (($label eq 'Site MP4') || ($label eq 'Video Original')){
+    if (($label eq 'Site MP4') || ($label eq 'Video Original')) {
 
       my $ua = LWP::UserAgent->new();
       my $req = HTTP::Request->new('HEAD' => $source);
@@ -688,7 +688,16 @@ sub backup_photo {
            : $1          ? "video-$1"
            :               "video-unknown";
 
-      $self->log()->info("video! $source has Content-Type $type becomes $ext");
+      $self->log()->info("picking extension $ext from Content-Type $type of video resource");
+    } else {
+      # Absurd. -- rjbs, 2025-06-28
+      ($ext) = $source =~ /\.([^.]{3,4})\z/;
+      $self->log()->info("picking extension $ext from source URL $source");
+    }
+
+    unless ($ext) {
+      $self->log()->info("picking extension 'unknown' because nothing else worked");
+      $ext = 'unknown';
     }
 
     my $img_root  = File::Spec->catdir($photos_root, $yyyy, $mm, $dd);
