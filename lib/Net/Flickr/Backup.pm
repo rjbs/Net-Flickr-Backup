@@ -740,14 +740,16 @@ sub backup_photo {
       }
     }
 
-    if (! $UA->mirror($source, $img_bak)->is_success) {
-      $self->log->error("failed to store '$source' as '$img_bak', $!");
-      next;
+    my $mirror_res = $UA->mirror($source, $img_bak);
+    if ($mirror_res->code == 304) {
+      $self->log->info("no changes to $img_bak");
+    } elsif (! $mirror_res->is_success) {
+      $self->log->error("failed to store '$source' as '$img_bak'; " .  $mirror_res->status_line);
+      next; # <-- give up if we could not mirror
+    } else {
+      $self->log->info("stored $img_bak");
+      $files_modified ++;
     }
-
-    $self->log->info("stored $img_bak");
-
-    $files_modified ++;
   }
 
   # Ensure that we don't accidentally purge any metafiles
