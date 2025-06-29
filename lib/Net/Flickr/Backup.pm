@@ -523,7 +523,7 @@ sub backup {
       my $secret  = $node->getAttribute("secret");
 
       $self->log->info(
-        sprintf "process image %s (%s)",
+        sprintf "photo %s: now backing up (%s)",
         $id,
         _clean($node->getAttribute("title"))
       );
@@ -666,14 +666,14 @@ sub backup_photo {
     }
 
     if (! $do_fetch) {
-      $self->log->debug("$fetch_param option is false, skipping");
+      $self->log->debug("photo $id: $fetch_param option is false, skipping");
       next;
     }
 
     my $sz = ($sizes->findnodes("/rsp/sizes/size[\@label='$label']"))[0];
 
     if (! $sz) {
-      $self->log->warning("Unable to locate size info for key $label");
+      $self->log->warning("photo $id: unable to locate size info for key $label");
       next;
     }
 
@@ -694,22 +694,22 @@ sub backup_photo {
            : $1          ? "video-$1"
            :               "video-unknown";
 
-      $self->log->info("picking extension $ext from Content-Type $type of video resource");
+      $self->log->info("photo $id: using extension $ext from Content-Type $type of video");
     } else {
       # Absurd. -- rjbs, 2025-06-28
       ($ext) = $source =~ /\.([^.]{3,4})\z/;
-      $self->log->info("picking extension $ext from source URL $source");
+      $self->log->info("photo $id: using extension $ext from source URL $source");
     }
 
     unless ($ext) {
-      $self->log->info("picking extension 'unknown' because nothing else worked");
+      $self->log->info(qq{photo $id: using extension "unknown" as last resort});
       $ext = 'unknown';
     }
 
     my $img_root  = File::Spec->catdir($photos_root, $yyyy, $mm, $dd);
     my $img_fname = sprintf("%04d%02d%02d-%s-%s%s.%s", $yyyy, $mm, $dd, $id, $title, $FETCH_SIZES{$label}, $ext);
 
-    $self->log->info("scrub-store $img_fname");
+    $self->log->info("photo $id: target name for $label copy is $img_fname");
     push @{$self->{_scrub}->{$id}}, $img_fname;
 
     my $img_bak = File::Spec->catfile($img_root, $img_fname);
@@ -718,14 +718,14 @@ sub backup_photo {
     if ((-s $img_bak) && (! $force)){
 
       if (! $has_changed){
-        $self->log->info("$img_bak has not changed, skipping");
+        $self->log->info("photo $id: $img_bak has not changed, skipping");
         next;
       }
 
       my $mtime = (stat($img_bak))[9];
 
       if ((-f $img_bak) && ($last_update) && ($mtime >= $last_update)){
-        $self->log->info("$img_bak has not changed ($mtime/$last_update), skipping");
+        $self->log->info("photo $id: $img_bak has not changed ($mtime/$last_update), skipping");
         $has_changed = 0;
         next;
       }
@@ -733,22 +733,22 @@ sub backup_photo {
 
     if (! -d $img_root) {
 
-      $self->log->info("create $img_root");
+      $self->log->info("photo $id: create $img_root");
 
       if (! mkpath([$img_root], 0, 0755)) {
-        $self->log->error("failed to create $img_root, $!");
+        $self->log->error("photo $id: failed to create $img_root: $!");
         next;
       }
     }
 
     my $mirror_res = $UA->mirror($source, $img_bak);
     if ($mirror_res->code == 304) {
-      $self->log->info("no changes to $img_bak");
+      $self->log->info("photo $id: no changes to $img_bak");
     } elsif (! $mirror_res->is_success) {
-      $self->log->error("failed to store '$source' as '$img_bak'; " .  $mirror_res->status_line);
+      $self->log->error("photo $id: failed to store '$source' as '$img_bak'; " .  $mirror_res->status_line);
       next; # <-- give up if we could not mirror
     } else {
-      $self->log->info("stored $img_bak");
+      $self->log->info("photo $id: stored $img_bak");
       $files_modified ++;
     }
   }
@@ -762,16 +762,16 @@ sub backup_photo {
 
   $has_changed = ($files_modified) ? 1 : 0;
 
-  $self->log->info("has changed (filemod): $has_changed");
+  $self->log->info("photo $id: has changed (filemod): $has_changed");
 
   if ((! $has_changed) && (! $force)) {
 
     my $lastmod = $self->{__lastmod_since};
-    $self->log->info("last mod: $lastmod");
+    $self->log->info("photo $id: last mod: $lastmod");
 
     if (($lastmod) && ($last_update >= $lastmod)) {
       $has_changed = 1;
-      $self->log->info("has changed (update): $has_changed ($last_update - $lastmod)");
+      $self->log->info("photo $id: has changed (update): $has_changed ($last_update - $lastmod)");
     }
 
     # Ensure the RDF file is there and up to date
@@ -779,22 +779,22 @@ sub backup_photo {
     if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
 
       my $dump = $self->path_rdf_dumpfile($info);
-      $self->log->info("test for rdf dump: $dump");
+      $self->log->info("photo $id: test for rdf dump: $dump");
 
       if (($has_changed) && (-f $dump)) {
 
         my $dumpmod = (stat($dump))[9];
-        $self->log->info("rdf dump: $dump");
+        $self->log->info("photo $id: rdf dump: $dump");
 
         if ($dumpmod >= $lastmod) {
           $has_changed = 0;
-          $self->log->info("has changed (rdf): $has_changed ($last_update - $dumpmod)");
+          $self->log->info("photo $id: has changed (rdf): $has_changed ($last_update - $dumpmod)");
         }
       }
 
       else {
         if (! -f $dump) {
-          $self->log->info("rdf dump does not exist: $dump");
+          $self->log->info("photo $id: rdf dump does not exist: $dump");
           $has_changed = 1;
         }
       }
@@ -802,7 +802,7 @@ sub backup_photo {
 
   }
 
-  $self->log->info("has changed (final): $has_changed");
+  $self->log->info("photo $id: has changed (final): $has_changed");
 
   # We want RDF
   if ($self->{cfg}->param("rdf.do_dump")) {
