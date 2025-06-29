@@ -349,6 +349,7 @@ Fetch photos that have been modified in the last B<(n)> months.
 
 =cut
 
+use Carp ();
 use Encode;
 use JSON::PP;
 
@@ -586,8 +587,8 @@ sub backup_photo {
   my $photos_root = $self->{cfg}->param("backup.photos_root");
 
   if (! $photos_root) {
-    $self->log->error("no photo root defined, exiting");
-    return 0;
+    # This shouldn't be possible.  We checked for it in ->backup.
+    Carp::croak("no photo root defined, exiting");
   }
 
   my $info = $self->api_call({
