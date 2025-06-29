@@ -1,0 +1,16 @@
+Revision history for Net-Flickr-Backup
+
+{{$NEXT}}
+        - big changes, but hopefully all backward compatible...
+        - logs changed to be easier to skim
+        - fixed bugs in filename generation, will will result in some files
+          being renamed
+        - use LWP::UserAgent's "mirror" to avoid unneeded downloads
+        - file extensions for videos are set, either .mp4 or .video-X
+        - file extensions for photos are correct; PNGs are no longer named .jpg
+        - no longer attempts to download video original for still photos
+        - always generate HTTPS links to Flickr
+        - lots of reformatting of the code
+
+!!! Logs for previous changes are found in Changes.rdf, which may some day be
+    rewritten into ... well, something other than RDF.
