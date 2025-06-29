@@ -797,12 +797,12 @@ sub backup_photo {
 
   $self->log()->info("has changed (final): $has_changed");
 
-  # Is that RDF in your pants?
+  # We want RDF
   if ($self->{cfg}->param("rdf.do_dump")) {
     $self->store_rdf($info, $has_changed, $force);
   }
 
-  # JPEG/IPTC
+  # We want IPTC
   if ($self->{cfg}->param("iptc.do_dump")) {
     $self->store_iptc($info, $has_changed, $force);
   }
