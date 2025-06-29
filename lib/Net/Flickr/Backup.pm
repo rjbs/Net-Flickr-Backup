@@ -765,36 +765,33 @@ sub backup_photo {
   $self->log->info("photo $id: has changed (filemod): $has_changed");
 
   if ((! $has_changed) && (! $force)) {
-
     my $lastmod = $self->{__lastmod_since};
-    $self->log->info("photo $id: last mod: $lastmod");
 
     if (($lastmod) && ($last_update >= $lastmod)) {
       $has_changed = 1;
-      $self->log->info("photo $id: has changed (update): $has_changed ($last_update - $lastmod)");
+      $self->log->info("photo $id: has changed (photo object): $last_update > $lastmod");
     }
 
     # Ensure the RDF file is there and up to date
 
     if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
-
       my $dump = $self->path_rdf_dumpfile($info);
-      $self->log->info("photo $id: test for rdf dump: $dump");
+      $self->log->debug("photo $id: rdf dump target: $dump");
 
       if (($has_changed) && (-f $dump)) {
 
         my $dumpmod = (stat($dump))[9];
-        $self->log->info("photo $id: rdf dump: $dump");
+        $self->log->debug("photo $id: rdf dump exists with mtime $dumpmod");
 
         if ($dumpmod >= $lastmod) {
           $has_changed = 0;
-          $self->log->info("photo $id: has changed (rdf): $has_changed ($last_update - $dumpmod)");
+          $self->log->info("photo $id: rdf has not changed: $last_update < $dumpmod");
         }
       }
 
       else {
         if (! -f $dump) {
-          $self->log->info("photo $id: rdf dump does not exist: $dump");
+          $self->log->info("photo $id: rdf dump does not exist at $dump");
           $has_changed = 1;
         }
       }
@@ -802,7 +799,8 @@ sub backup_photo {
 
   }
 
-  $self->log->info("photo $id: has changed (final): $has_changed");
+  my $has = $has_changed ? 'changed' : 'not changed';
+  $self->log->info("photo $id: has $has");
 
   # We want RDF
   if ($self->{cfg}->param("rdf.do_dump")) {
@@ -849,15 +847,15 @@ sub store_rdf {
 
   if ((! -d $meta_root) && (! $rdf_inline)) {
 
-    $self->log->info("create $meta_root");
+    $self->log->info("photo $id: create $meta_root");
 
     if (! mkpath([$meta_root], 0, 0755)) {
-      $self->log->error("failed to create $meta_root, $!");
+      $self->log->error("photo $id: failed to create $meta_root, $!");
       next;
     }
   }
 
-  $self->log->info("fetching RDF data for photo");
+  $self->log->info("photo $id: fetching RDF data for photo");
 
   my $fh = undef;
 
@@ -870,7 +868,7 @@ sub store_rdf {
   }
 
   if (! $fh) {
-    $self->log->error("failed to open '$meta_bak', $!");
+    $self->log->error("photo $id: failed to open '$meta_bak', $!");
     return 0;
   }
 
@@ -881,7 +879,7 @@ sub store_rdf {
   });
 
   if (! $desc_ok) {
-    $self->log->error("failed to describe photo $id:$secret");
+    $self->log->error("photo $id: failed to describe photo $id:$secret");
 
     if (! $rdf_inline){
       $fh->delete;
@@ -899,7 +897,7 @@ sub store_rdf {
 
   else {
     if (! $fh->close) {
-      $self->log->error("failed to write '$meta_bak', $!");
+      $self->log->error("photo $id: failed to write '$meta_bak', $!");
       return 0;
     }
   }
