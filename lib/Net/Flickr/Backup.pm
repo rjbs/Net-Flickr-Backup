@@ -994,8 +994,6 @@ sub scrub {
   $rule->exec(sub {
     my ($shortname, $path, $fullname) = @_;
 
-    # $self->log->info("test $shortname");
-
     $shortname =~ /^\d{8}-(\d+)-/;
     my $id = $1;
 
@@ -1384,13 +1382,14 @@ sub _clean {
 
   $str = unidecode(&_unescape(&_decode($str)));
 
-  $str =~ s/@/at/g;
-  $str =~ s/&/and/g;
-  $str =~ s/\*/star/g;
+  $str =~ s/@/ at /g;
+  $str =~ s/&/ and /g;
+  $str =~ s/\*/ star /g;
 
-  $str =~ s/[^a-z0-9-_]/ /ig;
   $str =~ s/'//g;
   $str =~ s/\^//g;
+
+  $str =~ s/[^a-z0-9-_]/ /ig;
 
   # make all whitespace single spaces
   $str =~ s/\s+/ /g;
@@ -1398,9 +1397,6 @@ sub _clean {
   # remove starting or trailing whitespace
   $str =~ s/^\s+//;
   $str =~ s/\s+$//;
-
-  # remove trailing periods
-  $str =~ s/\.+$//;
 
   # make all spaces underscores
   $str =~ s/ /_/g;
