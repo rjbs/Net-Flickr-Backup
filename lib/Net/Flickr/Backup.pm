@@ -474,7 +474,7 @@ sub backup {
     $self->{__lastmod_since} = $min_date;
   }
 
-  $self->log()->info("search args ($poll_meth) : " . Dumper($poll_args));
+  $self->log()->info("search args ($poll_meth): " . Dumper($poll_args));
 
   my $num_pages    = 0;
   my $current_page = 1;
@@ -568,7 +568,7 @@ sub backup_photo {
   my $id     = shift;
   my $secret = shift;
 
-  # FIX ME : add 'skip' hash containing id+secret
+  # FIX ME: add 'skip' hash containing id+secret
   # If there is a problem storing photo data, ensure
   # that it is not accidentally scrubbed.
 
@@ -754,16 +754,16 @@ sub backup_photo {
 
   $has_changed = ($files_modified) ? 1 : 0;
 
-  $self->log()->info("has changed (filemod) : $has_changed");
+  $self->log()->info("has changed (filemod): $has_changed");
 
   if ((! $has_changed) && (! $force)) {
 
     my $lastmod = $self->{__lastmod_since};
-    $self->log()->info("last mod : $lastmod");
+    $self->log()->info("last mod: $lastmod");
 
     if (($lastmod) && ($last_update >= $lastmod)) {
       $has_changed = 1;
-      $self->log()->info("has changed (update) : $has_changed ($last_update - $lastmod)");
+      $self->log()->info("has changed (update): $has_changed ($last_update - $lastmod)");
     }
 
     # Ensure the RDF file is there and up to date
@@ -771,22 +771,22 @@ sub backup_photo {
     if (! $self->{cfg}->param("rdf.rdfdump_inline")) {
 
       my $dump = $self->path_rdf_dumpfile($info);
-      $self->log()->info("test for rdf dump : $dump");
+      $self->log()->info("test for rdf dump: $dump");
 
       if (($has_changed) && (-f $dump)) {
 
         my $dumpmod = (stat($dump))[9];
-        $self->log()->info("rdf dump : $dump");
+        $self->log()->info("rdf dump: $dump");
 
         if ($dumpmod >= $lastmod) {
           $has_changed = 0;
-          $self->log()->info("has changed (rdf) : $has_changed ($last_update - $dumpmod)");
+          $self->log()->info("has changed (rdf): $has_changed ($last_update - $dumpmod)");
         }
       }
 
       else {
         if (! -f $dump) {
-          $self->log()->info("rdf dump does not exist : $dump");
+          $self->log()->info("rdf dump does not exist: $dump");
           $has_changed = 1;
         }
       }
@@ -794,7 +794,7 @@ sub backup_photo {
 
   }
 
-  $self->log()->info("has changed (final) : $has_changed");
+  $self->log()->info("has changed (final): $has_changed");
 
   # Is that RDF in your pants?
   if ($self->{cfg}->param("rdf.do_dump")) {
@@ -1381,7 +1381,7 @@ sub _clean {
   # unidecode to convert everything to
   # happy happy ASCII
 
-  # see also : http://perladvent.org/2004/12th/
+  # see also: http://perladvent.org/2004/12th/
 
   $str = unidecode(&_unescape(&_decode($str)));
 
@@ -1482,7 +1482,7 @@ sub _mk_mindate {
   my $count  = $1;
   my $period = $2;
 
-  # print "count $count : period $period\n";
+  # print "count $count: period $period\n";
 
   if ((! $count) || (! $period)) {
     return 0;
