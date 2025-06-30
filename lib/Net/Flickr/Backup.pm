@@ -1481,7 +1481,7 @@ sub _execute_callback {
 sub _mk_mindate {
   my $str = shift;
 
-  $str =~ /^(\d+)([hdwM])$/;
+  $str =~ /^(\d+)([hdwMy])$/;
 
   my $count  = $1;
   my $period = $2;
@@ -1505,7 +1505,11 @@ sub _mk_mindate {
   }
 
   elsif ($period eq "M") {
-    return time - ($count * (4 * (7 * (24 * (60 * 60)))));
+    return time - ($count * (31 * (24 * (60 * 60))));
+  }
+
+  elsif ($period eq "y") {
+    return time - ($count * (365 * (24 * (60 * 60))));
   }
 
   else {
