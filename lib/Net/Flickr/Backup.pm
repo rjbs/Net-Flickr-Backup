@@ -486,9 +486,7 @@ sub backup {
   my $num_pages    = 0;
   my $current_page = 1;
 
-  my $poll = 1;
-
-  while ($poll) {
+  PAGE: while (1) {
 
     if ($self->{__cancel}) {
       last;
@@ -541,7 +539,7 @@ sub backup {
     }
 
     if ($current_page >= $num_pages) {
-      $poll = 0;
+      last PAGE;
     }
 
     $current_page ++;
