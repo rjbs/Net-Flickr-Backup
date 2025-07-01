@@ -1595,6 +1595,88 @@ sub _iptcify {
   }
 }
 
+{
+  package
+    Net::Flickr::Backup::SlurpReverse;
+
+  sub _new {
+    my ($class, $backup, $method, $input_args) = @_;
+
+    my %args = %$input_args;
+
+    $args{page} //= 1;
+    $args{per_page} //= 500;
+
+    my @pages;
+    my $page_count;
+
+    PAGE: while (1) {
+      my $photos = $backup->api_call({
+        method  => $method,
+        args    => \%args,
+      });
+
+      unless ($photos) {
+        # XXX Ugh, does/can this happen? -- rjbs, 2025-06-30
+        Carp::confess("meaning of undef from api_call to $method unclear");
+      }
+
+      $page_count //= $photos->find("/rsp/photos/\@pages")->string_value;
+
+      my @items = reverse $photos->findnodes("/rsp/photos/photo");
+
+      unshift @pages, {
+        page_count  => $page_count,
+        items       => \@items,
+        photos_node => $photos,
+
+        backup      => $backup,
+        method      => $method,
+        args        => { %args },
+      };
+
+      $backup->log->info(
+        sprintf "slurp/reverse iterator: fetched page %i of %i, %i items",
+          $args{page},
+          $page_count,
+          0+@items,
+      );
+
+      last PAGE if ++$args{page} > $page_count;
+    }
+
+    for my $i (0 .. $#pages) {
+      bless $pages[$i], $class;
+      if ($i < $#pages) {
+        $pages[$i]->{next} = $pages[$i+1];
+      }
+    }
+
+    return $pages[0];
+  }
+
+  sub photos_node {
+    my ($self) = @_;
+    $self->{photos_node};
+  }
+
+  sub page_number {
+    my ($self) = @_;
+    $self->{args}{page};
+  }
+
+  sub items {
+    my ($self) = @_;
+    return @{ $self->{items} };
+  }
+
+  sub next_page {
+    my ($self) = @_;
+
+    return $self->{next};
+  }
+}
+
 =head1 EXAMPLES
 
 =cut
