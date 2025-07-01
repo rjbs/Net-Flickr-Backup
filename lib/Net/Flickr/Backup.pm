@@ -461,6 +461,8 @@ sub backup {
   my $poll_meth;
   my $poll_args = $self->{cfg}->param(-block => "search");
 
+  my $iterator_class;
+
   if (my $min_date = delete $poll_args->{"modified_since"}) {
     if (keys %$poll_args) {
       $self->log->error("search.modified_since provided, but also other search options, which won't work");
@@ -476,18 +478,22 @@ sub backup {
       }
     }
 
+    $iterator_class = 'Net::Flickr::Backup::SlurpReverse';
+
     $poll_meth = "flickr.photos.recentlyUpdated";
     $poll_args = { min_date => $min_date };
 
     $self->{__lastmod_since} = $min_date;
   } else {
+    $iterator_class = 'Net::Flickr::Backup::StandardIterator';
+
     $poll_meth = "flickr.photos.search";
     $poll_args->{user_id} = $auth->find("/rsp/auth/user/\@nsid")->string_value;
   }
 
   $self->log->info("search args ($poll_meth): " .  JSON::PP->new->canonical->encode($poll_args));
 
-  my $page = Net::Flickr::Backup::StandardIterator->_new($self, $poll_meth, $poll_args);
+  my $page = $iterator_class->_new($self, $poll_meth, $poll_args);
 
   PAGE: while ($page) {
     if ($self->{__cancel}) {
