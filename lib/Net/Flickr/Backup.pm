@@ -345,6 +345,10 @@ Fetch photos that have been modified in the last B<(n)> weeks.
 
 Fetch photos that have been modified in the last B<(n)> months.
 
+=item C<y>
+
+Fetch photos that have been modified in the last B<(n)> years.
+
 =back
 
 =cut
