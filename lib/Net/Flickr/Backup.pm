@@ -483,33 +483,18 @@ sub backup {
 
   $self->log->info("search args ($poll_meth): " .  JSON::PP->new->canonical->encode($poll_args));
 
-  my $num_pages    = 0;
-  my $current_page = 1;
+  my $page = Net::Flickr::Backup::StandardIterator->_new($self, $poll_meth, $poll_args);
 
-  PAGE: while (1) {
-
+  PAGE: while ($page) {
     if ($self->{__cancel}) {
       last;
     }
 
-    $poll_args->{page} = $current_page;
-
-    my $photos = $self->api_call({
-      method  => $poll_meth,
-      args    => $poll_args,
-    });
-
-    if (! $photos) {
-      return 0;
+    if (($page->page_number == 1) && ($self->_has_callback("start_backup_queue"))) {
+      $self->_execute_callback("start_backup_queue", $page->photos_node);
     }
 
-    if (($current_page == 1) && ($self->_has_callback("start_backup_queue"))) {
-      $self->_execute_callback("start_backup_queue", $photos);
-    }
-
-    $num_pages = $photos->find("/rsp/photos/\@pages")->string_value;
-
-    foreach my $node ($photos->findnodes("/rsp/photos/photo")) {
+    foreach my $node ($page->items) {
 
       if ($self->{__cancel}) {
         last;
@@ -538,11 +523,7 @@ sub backup {
 
     }
 
-    if ($current_page >= $num_pages) {
-      last PAGE;
-    }
-
-    $current_page ++;
+    $page = $page->next_page;
   }
 
   if ($self->_has_callback("finish_backup_queue")) {
@@ -1539,6 +1520,79 @@ sub _jpeg_handler {
 sub _iptcify {
   my $self = shift;
   return encode("iso-8859-1", _decode($_[0]));
+}
+
+{
+  package
+    Net::Flickr::Backup::StandardIterator;
+
+  sub _new {
+    my ($class, $backup, $method, $input_args) = @_;
+
+    my %args = %$input_args;
+    $args{page} //= 1;
+    $args{per_page} //= 500;
+
+    my $photos = $backup->api_call({
+      method  => $method,
+      args    => \%args,
+    });
+
+    my $page_count = $photos
+                   ? $photos->find("/rsp/photos/\@pages")->string_value
+                   : 1;
+
+    my @items;
+    if ($photos) {
+      push @items, $photos->findnodes("/rsp/photos/photo");
+    }
+
+    $backup->log->info(
+      sprintf "standard iterator: fetched page %i of %i, %i items",
+        $args{page},
+        $page_count,
+        0+@items,
+    );
+
+    my $guts = {
+      page_count  => $page_count,
+      items       => \@items,
+      photos_node => $photos,
+
+      backup      => $backup,
+      method      => $method,
+      args        => \%args,
+    };
+
+    return bless $guts, $class;
+  }
+
+  sub photos_node {
+    my ($self) = @_;
+    $self->{photos_node};
+  }
+
+  sub page_number {
+    my ($self) = @_;
+    $self->{args}{page};
+  }
+
+  sub items {
+    my ($self) = @_;
+    return @{ $self->{items} };
+  }
+
+  sub next_page {
+    my ($self) = @_;
+
+    return if $self->page_number >= $self->{page_count};
+
+    (ref $self)->_new(
+      $self->{backup},
+      $self->{method},
+      { %{ $self->{args} }, page => $self->page_number + 1 },
+    );
+  }
 }
 
 =head1 EXAMPLES
